@@ -1,4 +1,10 @@
-Flask==3.0.0
-google-generativeai==0.3.2
-Werkzeug==3.0.1
-python-dotenv
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
