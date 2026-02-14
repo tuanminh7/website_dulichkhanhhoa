@@ -74,7 +74,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'response': response.text,
-                'model': 'gemini-2.0-flash-exp',
+                'model': 'gemini-2.5-flash',
                 'finish_reason': 'stop'
             }
             
@@ -114,7 +114,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'itinerary': itinerary_data,
-                'model': 'gemini-2.0-flash-exp'
+                'model': 'gemini-2.5-flash'
             }
             
         except Exception as e:
@@ -152,7 +152,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'suggestions': suggestions,
-                'model': 'gemini-2.0-flash-exp'
+                'model': 'gemini-2.5-flash'
             }
             
         except Exception as e:
@@ -190,7 +190,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'cost': cost_data,
-                'model': 'gemini-2.0-flash-exp'
+                'model': 'gemini-2.5-flash'
             }
             
         except Exception as e:

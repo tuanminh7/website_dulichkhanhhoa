@@ -21,7 +21,7 @@ class Config:
     
     # Google Gemini API
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-    GEMINI_MODEL = 'gemini-2.0-flash-exp'  # Gemini 2.5 model
+    GEMINI_MODEL = 'gemini-2.5-flash'  # Gemini 2.5 model
     
     # Google Maps API
     GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
