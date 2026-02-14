@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Chat AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    #chatBox {
+        height: 500px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+    .message {
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 10px;
+        max-width: 70%;
+    }
+    .user-message {
+        background-color: #2563eb;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    .ai-message {
+        background-color: white;
+        border: 1px solid #ddd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Chat với AI tư vấn du lịch</h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div id="chatBox"></div>
+            
+            <div class="input-group mt-3">
+                <input type="text" class="form-control" id="messageInput" 
+                       placeholder="Nhập câu hỏi của bạn..." 
+                       onkeypress="if(event.key==='Enter') sendMessage()">
+                <button class="btn btn-primary" onclick="sendMessage()">Gửi</button>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">💡 Gợi ý câu hỏi</h5>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="askSuggestion('Gợi ý lịch trình Hà Nội 3 ngày')">
+                            Lịch trình Hà Nội 3 ngày
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="askSuggestion('Những địa điểm nổi tiếng ở Đà Nẵng')">
+                            Địa điểm Đà Nẵng
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="askSuggestion('Ước tính chi phí du lịch Sapa 2 ngày')">
+                            Chi phí Sapa 2 ngày
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="askSuggestion('Món ăn đặc sản miền Trung')">
+                            Ẩm thực miền Trung
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let sessionId = null;
+
+function addMessage(content, isUser = false) {
+    const chatBox = document.getElementById('chatBox');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+    messageDiv.textContent = content;
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addMessage(message, true);
+    input.value = '';
+    
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message: message,
+                session_id: sessionId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.session_id) sessionId = data.session_id;
+        addMessage(data.response);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        addMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.');
+    }
+}
+
+function askSuggestion(question) {
+    document.getElementById('messageInput').value = question;
+    sendMessage();
+}
+
+addMessage('Xin chào! Tôi là trợ lý AI du lịch. Tôi có thể giúp bạn lên lịch trình, gợi ý địa điểm, ước tính chi phí. Bạn cần tư vấn gì?');
+</script>
+{% endblock %}

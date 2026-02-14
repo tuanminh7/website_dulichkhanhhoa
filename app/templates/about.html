@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Giới thiệu{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Giới thiệu</h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>Về chúng tôi</h3>
+            <p>Tourism Website là hệ thống du lịch thông minh, kết hợp công nghệ AI và Google Maps để mang đến trải nghiệm du lịch tốt nhất cho người dùng.</p>
+            
+            <h4 class="mt-4">Tính năng chính</h4>
+            <ul>
+                <li>🤖 <strong>AI Chatbot</strong> - Tư vấn lịch trình thông minh với Gemini AI</li>
+                <li>🗺️ <strong>Google Maps</strong> - Chỉ đường và tính khoảng cách chính xác</li>
+                <li>📍 <strong>Địa điểm</strong> - Cơ sở dữ liệu địa điểm du lịch phong phú</li>
+                <li>💰 <strong>Ước tính chi phí</strong> - Tính toán ngân sách chi tiết</li>
+                <li>⭐ <strong>Review & Rating</strong> - Đánh giá từ cộng đồng</li>
+            </ul>
+            
+            <h4 class="mt-4">Công nghệ</h4>
+            <ul>
+                <li>Backend: Flask (Python)</li>
+                <li>AI: Google Gemini 2.5</li>
+                <li>Maps: Google Maps Platform</li>
+                <li>Database: SQLite/PostgreSQL</li>
+            </ul>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">📞 Liên hệ</h5>
+                    <p><strong>Email:</strong> support@tourism.com</p>
+                    <p><strong>Website:</strong> tourism.com</p>
+                    <p><strong>Facebook:</strong> /tourism</p>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">📊 Thống kê</h5>
+                    <p id="stats">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        document.getElementById('stats').innerHTML = `
+            <p><strong>Địa điểm:</strong> ${data.total_places}</p>
+            <p><strong>Người dùng:</strong> ${data.total_users}</p>
+            <p><strong>Lịch trình:</strong> ${data.total_itineraries}</p>
+        `;
+    } catch (error) {
+        document.getElementById('stats').textContent = 'Không thể tải thống kê';
+    }
+}
+loadStats();
+</script>
+{% endblock %}

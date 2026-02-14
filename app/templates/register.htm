@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng ký{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Đăng ký tài khoản</h3>
+                    
+                    <div id="alertBox"></div>
+                    
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" id="username" required minlength="3">
+                            <div class="form-text">Ít nhất 3 ký tự</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mật khẩu</label>
+                            <input type="password" class="form-control" id="password" required minlength="6">
+                            <div class="form-text">Ít nhất 6 ký tự</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
+                    </form>
+                    
+                    <div class="text-center mt-3">
+                        <p>Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const alertBox = document.getElementById('alertBox');
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (password !== confirmPassword) {
+        alertBox.innerHTML = '<div class="alert alert-danger">Mật khẩu xác nhận không khớp</div>';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username, email, password})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alertBox.innerHTML = '<div class="alert alert-success">Đăng ký thành công!</div>';
+            setTimeout(() => window.location.href = '/', 1000);
+        } else {
+            alertBox.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+        }
+    } catch (error) {
+        alertBox.innerHTML = '<div class="alert alert-danger">Lỗi kết nối. Vui lòng thử lại.</div>';
+    }
+});
+</script>
+{% endblock %}

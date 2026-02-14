@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Địa điểm du lịch{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Địa điểm du lịch</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm địa điểm...">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="categoryFilter">
+                <option value="">Tất cả loại</option>
+                <option value="tourist_spot">Điểm tham quan</option>
+                <option value="restaurant">Nhà hàng</option>
+                <option value="accommodation">Lưu trú</option>
+                <option value="activity">Hoạt động</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" onclick="searchPlaces()">Tìm kiếm</button>
+        </div>
+    </div>
+
+    <div class="row" id="placesList">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+    </div>
+
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
+</div>
+
+<script>
+let currentPage = 1;
+let currentCategory = '';
+let currentSearch = '';
+
+async function loadPlaces(page = 1) {
+    try {
+        let url = `/api/places?page=${page}`;
+        if (currentCategory) url += `&category=${currentCategory}`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        displayPlaces(data.places);
+        displayPagination(data.pages, data.current_page);
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('placesList').innerHTML = 
+            '<div class="col-12 alert alert-danger">Lỗi khi tải dữ liệu</div>';
+    }
+}
+
+function displayPlaces(places) {
+    const container = document.getElementById('placesList');
+    
+    if (places.length === 0) {
+        container.innerHTML = '<div class="col-12 alert alert-info">Không tìm thấy địa điểm nào</div>';
+        return;
+    }
+    
+    container.innerHTML = places.map(place => `
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                ${place.main_image ? 
+                    `<img src="${place.main_image}" class="card-img-top" alt="${place.name}" style="height: 200px; object-fit: cover;">` : 
+                    '<div class="card-img-top bg-secondary" style="height: 200px;"></div>'}
+                <div class="card-body">
+                    <h5 class="card-title">${place.name}</h5>
+                    <p class="card-text">${place.short_description || place.description.substring(0, 100) + '...'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary">${getCategoryName(place.category)}</span>
+                        <span>⭐ ${place.rating || 0}</span>
+                    </div>
+                    <a href="/places/${place.id}" class="btn btn-outline-primary mt-2 w-100">Chi tiết</a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayPagination(totalPages, currentPage) {
+    const pagination = document.getElementById('pagination');
+    let html = '';
+    
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="loadPlaces(${i}); return false;">${i}</a>
+        </li>`;
+    }
+    
+    pagination.innerHTML = html;
+}
+
+function getCategoryName(category) {
+    const names = {
+        'tourist_spot': 'Điểm tham quan',
+        'restaurant': 'Nhà hàng',
+        'accommodation': 'Lưu trú',
+        'activity': 'Hoạt động'
+    };
+    return names[category] || category;
+}
+
+function searchPlaces() {
+    currentSearch = document.getElementById('searchInput').value;
+    currentCategory = document.getElementById('categoryFilter').value;
+    loadPlaces(1);
+}
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') searchPlaces();
+});
+
+loadPlaces();
+</script>
+{% endblock %}

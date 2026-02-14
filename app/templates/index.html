@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ - Tourism{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4">Khám phá du lịch Việt Nam</h1>
+        <p class="lead">Hệ thống tư vấn du lịch thông minh với AI</p>
+        <a href="/chat" class="btn btn-primary btn-lg me-2">Chat với AI</a>
+        <a href="/places" class="btn btn-success btn-lg">Xem địa điểm</a>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h2>🗺️</h2>
+                    <h5 class="card-title">Địa điểm du lịch</h5>
+                    <p class="card-text">Khám phá các điểm đến hấp dẫn khắp Việt Nam</p>
+                    <a href="/places" class="btn btn-outline-primary">Khám phá</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h2>🤖</h2>
+                    <h5 class="card-title">AI tư vấn</h5>
+                    <p class="card-text">Chatbot AI giúp lên lịch trình và gợi ý địa điểm</p>
+                    <a href="/chat" class="btn btn-outline-primary">Chat ngay</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h2>💰</h2>
+                    <h5 class="card-title">Ước tính chi phí</h5>
+                    <p class="card-text">Tính toán ngân sách chuyến đi của bạn</p>
+                    <a href="/chat" class="btn btn-outline-primary">Tính toán</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
