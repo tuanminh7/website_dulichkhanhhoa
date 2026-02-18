@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Chi tiết địa điểm{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div id="placeDetail">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const placeId = window.location.pathname.split('/').pop();
+
+async function loadPlace() {
+    try {
+        const response = await fetch(`/api/places/${placeId}`);
+        const place = await response.json();
+        
+        document.getElementById('placeDetail').innerHTML = `
+            <div class="row">
+                <div class="col-md-8">
+                    ${place.main_image ? 
+                        `<img src="${place.main_image}" class="img-fluid rounded mb-3" alt="${place.name}">` :
+                        '<div class="bg-secondary rounded mb-3" style="height: 400px;"></div>'}
+                    
+                    <h1>${place.name}</h1>
+                    <p class="text-muted">
+                        <span class="badge bg-primary">${getCategoryName(place.category)}</span>
+                        <span class="ms-2">⭐ ${place.rating || 0} (${place.review_count} đánh giá)</span>
+                    </p>
+                    
+                    <h4 class="mt-4">Mô tả</h4>
+                    <p>${place.description}</p>
+                    
+                    <h4 class="mt-4">Thông tin</h4>
+                    <ul class="list-unstyled">
+                        <li>📍 <strong>Địa chỉ:</strong> ${place.address}</li>
+                        ${place.phone ? `<li>📞 <strong>Điện thoại:</strong> ${place.phone}</li>` : ''}
+                        ${place.email ? `<li>✉️ <strong>Email:</strong> ${place.email}</li>` : ''}
+                        ${place.website ? `<li>🌐 <strong>Website:</strong> <a href="${place.website}" target="_blank">${place.website}</a></li>` : ''}
+                        ${place.estimated_cost ? `<li>💰 <strong>Giá tham khảo:</strong> ${place.estimated_cost.toLocaleString('vi-VN')} VND</li>` : ''}
+                    </ul>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Bản đồ</h5>
+                            ${place.latitude && place.longitude ? 
+                                `<div id="map" style="height: 300px; background: #ddd;"></div>` :
+                                '<p class="text-muted">Chưa có tọa độ</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Đánh giá</h5>
+                            <div class="text-center mb-3">
+                                <div style="font-size: 3rem;">${place.rating || 0}</div>
+                                <div>⭐⭐⭐⭐⭐</div>
+                                <small class="text-muted">${place.review_count} đánh giá</small>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="alert('Chức năng đánh giá đang phát triển')">
+                                Viết đánh giá
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('placeDetail').innerHTML = 
+            '<div class="alert alert-danger">Không tìm thấy địa điểm</div>';
+    }
+}
+
+function getCategoryName(category) {
+    const names = {
+        'tourist_spot': 'Điểm tham quan',
+        'restaurant': 'Nhà hàng',
+        'accommodation': 'Lưu trú',
+        'activity': 'Hoạt động'
+    };
+    return names[category] || category;
+}
+
+loadPlace();
+</script>
+{% endblock %}

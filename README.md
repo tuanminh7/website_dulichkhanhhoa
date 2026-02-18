@@ -150,46 +150,7 @@ OpenAI API - AI chatbot
 └────┘ └────┘ └────┘  └────────┘
 ```
 
-### Cấu trúc thư mục
 
-```
-project/
-├── app/
-│   ├── __init__.py          # Khởi tạo Flask app
-│   ├── models/              # Database models
-│   │   ├── user.py
-│   │   ├── place.py
-│   │   ├── itinerary.py
-│   │   └── chat_session.py
-│   ├── routes/              # API routes
-│   │   ├── main.py          # Trang chủ
-│   │   ├── auth.py          # Đăng ký/đăng nhập
-│   │   ├── places.py        # Địa điểm
-│   │   ├── ai.py            # AI chatbot
-│   │   ├── maps.py          # Google Maps
-│   │   └── admin.py         # Quản trị
-│   ├── services/            # Business logic
-│   │   ├── ai_service.py    # Xử lý AI
-│   │   ├── maps_service.py  # Google Maps
-│   │   └── itinerary_service.py
-│   ├── utils/               # Utilities
-│   │   ├── auth.py
-│   │   └── helpers.py
-│   └── templates/           # HTML templates
-│       ├── base.html
-│       ├── index.html
-│       ├── places.html
-│       ├── chat.html
-│       └── admin/
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── images/
-├── config.py                # Cấu hình
-├── requirements.txt         # Dependencies
-├── run.py                   # Entry point
-└── README.md
-```
 
 ---
 
@@ -262,7 +223,7 @@ FLASK_ENV=development
 DATABASE_URL=sqlite:///tourism.db
 
 # OpenAI API
-OPENAI_API_KEY=sk-your-openai-key-here
+GEMINI_API_KEY=.....
 
 # Google Maps API
 GOOGLE_MAPS_API_KEY=your-google-maps-key-here

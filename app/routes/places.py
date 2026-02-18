@@ -126,9 +126,11 @@ def create_place():
         from app.services.maps_service import get_maps_service
         maps_service = get_maps_service()
         geocode_result = maps_service.geocode(data['address'])
+        ##########
+        latitude = None
+        longitude = None
         
-        latitude = geocode_result['latitude'] if geocode_result else None
-        longitude = geocode_result['longitude'] if geocode_result else None
+       
         
         # Create place
         place = Place(
@@ -170,6 +172,9 @@ def create_place():
         
     except Exception as e:
         db.session.rollback()
+        print(f"ERROR creating place: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

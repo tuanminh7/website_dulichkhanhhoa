@@ -16,6 +16,11 @@ def index():
 def places():
     """Trang danh sách địa điểm"""
     return render_template('places.html')
+########### them route hiện thị địa điểm 
+@bp.route('/places/<int:place_id>')
+def place_detail(place_id):
+    """Trang chi tiết địa điểm"""
+    return render_template('place_detail.html')
 
 
 @bp.route('/chat')
@@ -41,6 +46,10 @@ def register():
     """Trang đăng ký"""
     return render_template('register.html')
 
+@bp.route('/admin')
+def admin():
+    """Trang admin"""
+    return render_template('admin.html')
 
 @bp.route('/api/stats')
 def get_stats():
