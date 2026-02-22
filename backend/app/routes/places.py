@@ -1,10 +1,11 @@
+import os
+
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
-from app.models.place import Place, Review
+from app.models.location import Location, LocationImage, Category
+from app.models.interaction import Review
 from app import db
 from sqlalchemy import or_, func
-import os
-import json
 from werkzeug.utils import secure_filename
 
 bp = Blueprint('places', __name__, url_prefix='/api/places')
@@ -30,34 +31,37 @@ def get_places():
         order = request.args.get('order', 'desc')
         
         # Base query
-        query = Place.query.filter_by(is_active=True)
+        query = Location.query.filter(Location.status == 'ACTIVE')
         
         # Filters
         if category:
-            query = query.filter_by(category=category)
+            # Assuming category is passed as ID or we need to join
+            query = query.join(Category).filter(Category.name.ilike(f"%{category}%"))
         
         if featured is not None:
-            query = query.filter_by(is_featured=featured)
+            # The Location model doesn't have is_featured, maybe we need to add it or use another field
+            # For now, let's skip or check if it exists in another way.
+            pass
         
         if search:
             search_term = f"%{search}%"
             query = query.filter(
                 or_(
-                    Place.name.ilike(search_term),
-                    Place.description.ilike(search_term),
-                    Place.address.ilike(search_term)
+                    Location.name.ilike(search_term),
+                    Location.description.ilike(search_term),
+                    Location.address.ilike(search_term)
                 )
             )
         
         # Sorting
         if sort_by == 'name':
-            sort_column = Place.name
+            sort_column = Location.name
         elif sort_by == 'rating':
-            sort_column = Place.rating
+            sort_column = Location.rating_avg
         elif sort_by == 'view_count':
-            sort_column = Place.view_count
+            sort_column = Location.created_at
         else:
-            sort_column = Place.created_at
+            sort_column = Location.created_at
         
         if order == 'asc':
             query = query.order_by(sort_column.asc())
@@ -83,13 +87,13 @@ def get_places():
 def get_place(place_id):
     """Lấy chi tiết địa điểm"""
     try:
-        place = Place.query.get_or_404(place_id)
+        location = Location.query.get_or_404(place_id)
         
-        # Increment view count
-        place.view_count += 1
-        db.session.commit()
+        # Increment view count - Location doesn't have view_count yet
+        # location.view_count += 1
+        # db.session.commit()
         
-        return jsonify(place.to_dict(include_reviews=True))
+        return jsonify(location.to_dict())
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -99,7 +103,7 @@ def get_place(place_id):
 @login_required
 def create_place():
     """Tạo địa điểm mới (Admin only)"""
-    if not current_user.is_admin:
+    if current_user.role != 'ADMIN':
         return jsonify({'error': 'Không có quyền truy cập'}), 403
     
     try:
@@ -130,27 +134,17 @@ def create_place():
         latitude = None
         longitude = None
         
-       
-        
-        # Create place
-        place = Place(
+        # Create location
+        location = Location(
             name=data['name'],
-            slug=slug,
-            category=data['category'],
+            category_id=data.get('category_id'), # Should be category_id now
             description=data.get('description'),
-            short_description=data.get('short_description'),
             address=data['address'],
             latitude=latitude,
             longitude=longitude,
-            phone=data.get('phone'),
-            email=data.get('email'),
-            website=data.get('website'),
-            price_range=data.get('price_range'),
-            estimated_cost=float(data.get('estimated_cost', 0)),
-            tags=data.get('tags'),
-            features=data.get('features'),
-            opening_hours=data.get('opening_hours'),
-            is_featured=data.get('is_featured', 'false').lower() == 'true'
+            price_range_min=float(data.get('price_range_min', 0)),
+            price_range_max=float(data.get('price_range_max', 0)),
+            status='ACTIVE'
         )
         
         # Handle file uploads
@@ -182,7 +176,7 @@ def create_place():
 @login_required
 def update_place(place_id):
     """Cập nhật địa điểm (Admin only)"""
-    if not current_user.is_admin:
+    if current_user.role != 'ADMIN':
         return jsonify({'error': 'Không có quyền truy cập'}), 403
     
     try:
@@ -254,14 +248,14 @@ def update_place(place_id):
 @login_required
 def delete_place(place_id):
     """Xóa địa điểm (Admin only)"""
-    if not current_user.is_admin:
+    if current_user.role != 'ADMIN':
         return jsonify({'error': 'Không có quyền truy cập'}), 403
     
     try:
-        place = Place.query.get_or_404(place_id)
+        location = Location.query.get_or_404(place_id)
         
         # Soft delete
-        place.is_active = False
+        location.status = 'INACTIVE'
         db.session.commit()
         
         return jsonify({'message': 'Xóa địa điểm thành công'})
@@ -274,7 +268,6 @@ def delete_place(place_id):
 @bp.route('/<int:place_id>/reviews', methods=['POST'])
 @login_required
 def add_review(place_id):
-    """Thêm đánh giá"""
     try:
         place = Place.query.get_or_404(place_id)
         data = request.get_json()
@@ -302,10 +295,10 @@ def add_review(place_id):
         
         db.session.add(review)
         
-        # Update place rating
-        avg_rating = db.session.query(func.avg(Review.rating)).filter_by(place_id=place_id).scalar()
-        place.rating = round(avg_rating, 1) if avg_rating else 0
-        place.review_count += 1
+        # Update location rating
+        avg_rating = db.session.query(func.avg(Review.rating)).filter_by(location_id=place_id).scalar()
+        location.rating_avg = round(avg_rating, 1) if avg_rating else 0
+        # location.review_count += 1 # Location model doesn't have review_count
         
         db.session.commit()
         

@@ -7,24 +7,20 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 
 class Config:
-    """Base configuration"""
-    
     # Flask
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-please-change'
     FLASK_ENV = os.environ.get('FLASK_ENV') or 'development'
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'tourism.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
-    
+
     # Google Gemini API
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-    GEMINI_MODEL = 'gemini-2.5-flash'  # Gemini 2.5 model
+    GEMINI_MODEL = 'gemini-3-flash-preview' 
     
     # Google Maps API
-    GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
+    # GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
     
     # File Upload
     UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
@@ -58,9 +54,10 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration"""
     DEBUG = True
     SQLALCHEMY_ECHO = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'tourism.db')
 
 
 class ProductionConfig(Config):
@@ -69,6 +66,8 @@ class ProductionConfig(Config):
     SQLALCHEMY_ECHO = False
     SESSION_COOKIE_SECURE = True
 
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    
 
 class TestingConfig(Config):
     """Testing configuration"""

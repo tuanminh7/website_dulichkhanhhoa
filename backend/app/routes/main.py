@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, jsonify
-from app.models.place import Place
 from app import db
 from sqlalchemy import func
 
@@ -56,24 +55,24 @@ def get_stats():
     """Get system statistics"""
     try:
         from app.models.user import User
-        from app.models.itinerary import Itinerary
+        from app.models.interaction import SavedItinerary
+        from app.models.location import Location
         
         stats = {
-            'total_places': Place.query.filter_by(is_active=True).count(),
+            'total_places': Location.query.filter(Location.status == 'ACTIVE').count(),
             'total_users': User.query.count(),
-            'total_itineraries': Itinerary.query.count(),
-            'featured_places': Place.query.filter_by(is_featured=True, is_active=True).count(),
+            'total_itineraries': SavedItinerary.query.count(),
             'categories': {}
         }
         
         # Count by category
         categories = db.session.query(
-            Place.category,
-            func.count(Place.id)
-        ).filter_by(is_active=True).group_by(Place.category).all()
+            Location.category_id,
+            func.count(Location.id)
+        ).filter(Location.status == 'ACTIVE').group_by(Location.category_id).all()
         
-        for category, count in categories:
-            stats['categories'][category] = count
+        for category_id, count in categories:
+            stats['categories'][str(category_id)] = count
         
         return jsonify(stats)
         

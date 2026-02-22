@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify, render_template
 from flask_login import login_required, current_user
 from app.services.itinerary_service import get_itinerary_service
-from app.models.itinerary import Itinerary, ChatSession
-from app.models.place import Place, Review
-from app.models.user import User
+from app.models.user import User, UserPreference
+from app.models.interaction import SavedItinerary, Review
+from app.models.location import Location
+from app.models.ai import ChatSession
 from app import db
 import json
 
 bp = Blueprint('user', __name__, url_prefix='/api/user')
-
 
 @bp.route('/profile', methods=['GET'])
 @login_required
@@ -17,16 +17,16 @@ def get_profile():
     try:
         user_data = {
             'id': current_user.id,
-            'username': current_user.username,
+            'username': current_user.email.split('@')[0], # current_user doesn't have username, using email part
             'email': current_user.email,
-            'full_name': current_user.full_name,
+            'full_name': current_user.fullname,
             'phone': current_user.phone,
-            'avatar_url': current_user.avatar_url,
-            'bio': current_user.bio,
-            'preferences': json.loads(current_user.preferences) if current_user.preferences else {},
+            'avatar_url': current_user.avatar,
+            'bio': getattr(current_user, 'bio', ''), # bio doesn't exist in model
+            'preferences': [p.to_dict() for p in current_user.preferences.all()],
             'created_at': current_user.created_at.isoformat(),
             'stats': {
-                'itineraries': Itinerary.query.filter_by(user_id=current_user.id).count(),
+                'itineraries': SavedItinerary.query.filter_by(user_id=current_user.id).count(),
                 'reviews': Review.query.filter_by(user_id=current_user.id).count(),
                 'chat_sessions': ChatSession.query.filter_by(user_id=current_user.id).count()
             }
@@ -47,13 +47,11 @@ def update_profile():
         
         # Update allowed fields
         if 'full_name' in data:
-            current_user.full_name = data['full_name']
+            current_user.fullname = data['full_name']
         if 'phone' in data:
             current_user.phone = data['phone']
-        if 'bio' in data:
-            current_user.bio = data['bio']
         if 'avatar_url' in data:
-            current_user.avatar_url = data['avatar_url']
+            current_user.avatar = data['avatar_url']
         
         db.session.commit()
         
@@ -61,12 +59,10 @@ def update_profile():
             'message': 'Cập nhật profile thành công',
             'user': {
                 'id': current_user.id,
-                'username': current_user.username,
                 'email': current_user.email,
-                'full_name': current_user.full_name,
+                'full_name': current_user.fullname,
                 'phone': current_user.phone,
-                'bio': current_user.bio,
-                'avatar_url': current_user.avatar_url
+                'avatar_url': current_user.avatar
             }
         })
         
@@ -126,12 +122,12 @@ def get_itineraries():
         per_page = request.args.get('per_page', 10, type=int)
         status = request.args.get('status')
         
-        query = Itinerary.query.filter_by(user_id=current_user.id)
+        query = SavedItinerary.query.filter_by(user_id=current_user.id)
         
-        if status:
-            query = query.filter_by(status=status)
+        # if status:
+        #     query = query.filter_by(status=status) # SavedItinerary doesn't have status
         
-        pagination = query.order_by(Itinerary.created_at.desc()).paginate(
+        pagination = query.order_by(SavedItinerary.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
@@ -287,8 +283,8 @@ def get_favorites():
             favorite_ids = prefs.get('favorite_places', [])
             
             if favorite_ids:
-                places = Place.query.filter(Place.id.in_(favorite_ids)).all()
-                favorites = [place.to_dict() for place in places]
+                locations = Location.query.filter(Location.id.in_(favorite_ids)).all()
+                favorites = [loc.to_dict() for loc in locations]
         
         return jsonify({
             'favorites': favorites,
@@ -390,9 +386,9 @@ def dashboard():
     """Lấy dữ liệu dashboard của user"""
     try:
         # Get recent itineraries
-        recent_itineraries = Itinerary.query.filter_by(
+        recent_itineraries = SavedItinerary.query.filter_by(
             user_id=current_user.id
-        ).order_by(Itinerary.updated_at.desc()).limit(5).all()
+        ).order_by(SavedItinerary.created_at.desc()).limit(5).all()
         
         # Get recent reviews
         recent_reviews = Review.query.filter_by(
@@ -402,11 +398,11 @@ def dashboard():
         # Get recent chat sessions
         recent_chats = ChatSession.query.filter_by(
             user_id=current_user.id
-        ).order_by(ChatSession.updated_at.desc()).limit(5).all()
+        ).order_by(ChatSession.created_at.desc()).limit(5).all()
         
         # Get stats
         stats = {
-            'itineraries_count': Itinerary.query.filter_by(user_id=current_user.id).count(),
+            'itineraries_count': SavedItinerary.query.filter_by(user_id=current_user.id).count(),
             'reviews_count': Review.query.filter_by(user_id=current_user.id).count(),
             'chat_sessions_count': ChatSession.query.filter_by(user_id=current_user.id).count()
         }

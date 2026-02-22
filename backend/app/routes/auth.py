@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint
 from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.user import User
 from app import db
-import re
+import re, json
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -91,10 +92,7 @@ def login():
         
         if not user or not user.check_password(password):
             return jsonify({'error': 'Tên đăng nhập hoặc mật khẩu không đúng'}), 401
-        
-        if not user.is_active:
-            return jsonify({'error': 'Tài khoản đã bị khóa'}), 403
-        
+
         # Login
         login_user(user, remember=remember)
         

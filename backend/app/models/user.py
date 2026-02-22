@@ -1,56 +1,75 @@
 from datetime import datetime
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+from uuid import uuid4
 from app import db, login_manager
+from flask_login import UserMixin
 
+
+def generateUUID():
+    return uuid4().hex
 
 class User(UserMixin, db.Model):
-    """User model"""
-    
     __tablename__ = 'users'
     
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    id = db.Column(db.String(36), primary_key=True, default=generateUUID)
+    fullname = db.Column(db.String(100))
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
-    is_active = db.Column(db.Boolean, default=True)
+    phone = db.Column(db.String(20))
+    avatar = db.Column(db.String(255))
+    role = db.Column(db.Enum('GUEST', 'USER', 'ADMIN', name='user_roles'), default='USER')
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Preferences (JSON stored as text)
-    preferences = db.Column(db.Text)  # JSON: travel style, interests, budget range
-    
     # Relationships
-    itineraries = db.relationship('Itinerary', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    preferences = db.relationship('UserPreference', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    itineraries = db.relationship('SavedItinerary', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     chat_sessions = db.relationship('ChatSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    favorites = db.relationship('Favorite', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     def set_password(self, password):
-        """Hash and set password"""
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
-        """Check password"""
         return check_password_hash(self.password_hash, password)
     
     def to_dict(self):
-        """Convert to dictionary"""
         return {
             'id': self.id,
-            'username': self.username,
+            'fullname': self.fullname,
             'email': self.email,
-            'is_admin': self.is_admin,
-            'is_active': self.is_active,
-            'created_at': self.created_at.isoformat(),
-            'preferences': self.preferences
+            'phone': self.phone,
+            'avatar': self.avatar,
+            'role': self.role,
+            'created_at': self.created_at.isoformat()
         }
     
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f'<User {self.email}>'
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    """Load user by ID"""
-    return User.query.get(int(user_id))
+class UserPreference(db.Model):
+    __tablename__ = 'user_preferences'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    preference_level = db.Column(db.Integer, default=1)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'category_id': self.category_id,
+            'preference_level': self.preference_level
+        }
+
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+
+if __name__ == "__main__" :
+    print(generateUUID())

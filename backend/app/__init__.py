@@ -39,10 +39,10 @@ def create_app(config_name=None):
         db.create_all()
         from app.models.user import User
         admin = User.query.filter_by(email=app.config['ADMIN_EMAIL']).first()
-        if not admin:
-            admin = User(username='admin', email=app.config['ADMIN_EMAIL'], is_admin=True)
-            admin.set_password(app.config['ADMIN_PASSWORD'])
-            db.session.add(admin)
-            db.session.commit()
+        # if not admin:
+        #     admin = User(username='admin', email=app.config['ADMIN_EMAIL'], is_admin=True)
+        #     admin.set_password(app.config['ADMIN_PASSWORD'])
+        #     db.session.add(admin)
+        #     db.session.commit()
     
     return app

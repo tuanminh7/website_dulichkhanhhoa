@@ -1,7 +1,7 @@
 from flask import current_app
 from app.services.ai_service import get_ai_service
-from app.models.itinerary import Itinerary
-from app.models.place import Place
+from app.models.interaction import SavedItinerary
+from app.models.location import Location
 from app import db
 from datetime import datetime, timedelta
 import json
@@ -35,8 +35,8 @@ class ItineraryService:
             # Get selected places from database
             places_data = []
             if selected_places:
-                places = Place.query.filter(Place.id.in_(selected_places)).all()
-                places_data = [self._place_to_dict(place) for place in places]
+                locations = Location.query.filter(Location.id.in_(selected_places)).all()
+                places_data = [self._place_to_dict(loc) for loc in locations]
             
             # Build enhanced preferences with places
             enhanced_preferences = preferences.copy()
@@ -82,14 +82,11 @@ class ItineraryService:
         """
         try:
             # Create new itinerary
-            itinerary = Itinerary(
+            itinerary = SavedItinerary(
                 user_id=user_id,
                 title=itinerary_data.get('title', 'Lịch trình du lịch'),
-                description=itinerary_data.get('description', ''),
-                duration_days=itinerary_data.get('duration_days', 1),
-                estimated_cost=itinerary_data.get('estimated_cost', 0),
-                itinerary_data=json.dumps(itinerary_data, ensure_ascii=False),
-                start_date=self._parse_date(itinerary_data.get('start_date'))
+                total_budget=itinerary_data.get('estimated_cost', 0),
+                nodes=itinerary_data.get('days', []) # SavedItinerary uses 'nodes' for JSON data
             )
             
             db.session.add(itinerary)
@@ -121,9 +118,9 @@ class ItineraryService:
             List of itinerary dictionaries
         """
         try:
-            itineraries = Itinerary.query.filter_by(
+            itineraries = SavedItinerary.query.filter_by(
                 user_id=user_id
-            ).order_by(Itinerary.created_at.desc()).limit(limit).all()
+            ).order_by(SavedItinerary.created_at.desc()).limit(limit).all()
             
             return [itinerary.to_dict() for itinerary in itineraries]
             
@@ -143,7 +140,7 @@ class ItineraryService:
             Itinerary dict or None
         """
         try:
-            query = Itinerary.query.filter_by(id=itinerary_id)
+            query = SavedItinerary.query.filter_by(id=itinerary_id)
             
             if user_id:
                 query = query.filter_by(user_id=user_id)
@@ -172,7 +169,7 @@ class ItineraryService:
             Dict with success status
         """
         try:
-            itinerary = Itinerary.query.filter_by(
+            itinerary = SavedItinerary.query.filter_by(
                 id=itinerary_id,
                 user_id=user_id
             ).first()
@@ -189,9 +186,7 @@ class ItineraryService:
             if 'description' in updates:
                 itinerary.description = updates['description']
             if 'itinerary_data' in updates:
-                itinerary.itinerary_data = json.dumps(updates['itinerary_data'], ensure_ascii=False)
-            if 'start_date' in updates:
-                itinerary.start_date = self._parse_date(updates['start_date'])
+                itinerary.nodes = updates['itinerary_data'].get('days', [])
             
             itinerary.updated_at = datetime.utcnow()
             db.session.commit()
@@ -221,7 +216,7 @@ class ItineraryService:
             Dict with success status
         """
         try:
-            itinerary = Itinerary.query.filter_by(
+            itinerary = SavedItinerary.query.filter_by(
                 id=itinerary_id,
                 user_id=user_id
             ).first()
@@ -293,29 +288,32 @@ class ItineraryService:
         
         return itinerary
     
-    def _place_to_dict(self, place: Place) -> Dict:
+    def _place_to_dict(self, loc: Location) -> Dict:
         """
-        Convert Place model to dictionary
+        Convert Location model to dictionary
         
         Args:
-            place: Place model instance
+            loc: Location model instance
         
         Returns:
-            Place dictionary
+            Location dictionary
         """
         return {
-            'id': place.id,
-            'name': place.name,
-            'description': place.description,
-            'category': place.category,
-            'address': place.address,
+            'id': loc.id,
+            'name': loc.name,
+            'description': loc.description,
+            'category_id': loc.category_id,
+            'address': loc.address,
             'coordinates': {
-                'lat': place.latitude,
-                'lng': place.longitude
-            } if place.latitude and place.longitude else None,
-            'estimated_cost': place.estimated_cost,
-            'rating': place.rating,
-            'image_url': place.main_image
+                'lat': loc.latitude,
+                'lng': loc.longitude
+            } if loc.latitude and loc.longitude else None,
+            'price_range': {
+                'min': loc.price_range_min,
+                'max': loc.price_range_max
+            },
+            'rating': loc.rating_avg,
+            'image_url': loc.images[0].image_url if loc.images.count() > 0 else None
         }
     
     def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
