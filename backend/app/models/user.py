@@ -1,4 +1,5 @@
 from datetime import datetime
+from flask_bcrypt import generate_password_hash, check_password_hash
 from uuid import uuid4
 from app import db, login_manager
 from flask_login import UserMixin
@@ -6,6 +7,7 @@ from flask_login import UserMixin
 
 def generateUUID():
     return uuid4().hex
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -22,9 +24,12 @@ class User(UserMixin, db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    preferences = db.relationship('UserPreference', backref='user', lazy='dynamic', cascade='all, delete-orphan')
-    itineraries = db.relationship('SavedItinerary', backref='user', lazy='dynamic', cascade='all, delete-orphan')
-    chat_sessions = db.relationship('ChatSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    preferences = db.relationship(
+        'UserPreference', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    itineraries = db.relationship(
+        'SavedItinerary', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    chat_sessions = db.relationship(
+        'ChatSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -68,7 +73,7 @@ class UserPreference(db.Model):
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return User.query.get(user_id)
 
 
 if __name__ == "__main__" :

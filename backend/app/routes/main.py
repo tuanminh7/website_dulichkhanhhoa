@@ -4,7 +4,6 @@ from sqlalchemy import func
 
 bp = Blueprint('main', __name__)
 
-
 @bp.route('/')
 def index():
     """Trang chủ"""

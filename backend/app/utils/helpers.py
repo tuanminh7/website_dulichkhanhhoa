@@ -1,13 +1,11 @@
-import os
-import uuid
+import os, uuid, json
+
 from werkzeug.utils import secure_filename
 from flask import current_app
 from datetime import datetime
-import json
 
 
 def allowed_file(filename, allowed_extensions=None):
-    """Check if file extension is allowed"""
     if allowed_extensions is None:
         allowed_extensions = current_app.config.get('ALLOWED_EXTENSIONS', set())
     
@@ -16,7 +14,6 @@ def allowed_file(filename, allowed_extensions=None):
 
 
 def save_uploaded_file(file, folder='uploads'):
-    """Save uploaded file and return path"""
     if not file or not allowed_file(file.filename):
         return None
     
@@ -44,23 +41,6 @@ def format_currency(amount, currency='VND'):
     return f"{amount:,.2f} {currency}"
 
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Calculate distance between two points using Haversine formula"""
-    from math import radians, cos, sin, asin, sqrt
-    
-    # Convert to radians
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    
-    # Radius of earth in kilometers
-    r = 6371
-    
-    return c * r
 
 
 def parse_json_safe(json_string, default=None):
@@ -133,18 +113,6 @@ def generate_session_id():
     return str(uuid.uuid4())
 
 
-def validate_coordinates(lat, lng):
-    """Validate latitude and longitude"""
-    try:
-        lat = float(lat)
-        lng = float(lng)
-        
-        if -90 <= lat <= 90 and -180 <= lng <= 180:
-            return True, lat, lng
-    except (ValueError, TypeError):
-        pass
-    
-    return False, None, None
 
 
 def chunk_list(lst, chunk_size):
@@ -171,8 +139,6 @@ def sanitize_filename(filename):
 
 
 class JSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder for datetime objects"""
-    
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()

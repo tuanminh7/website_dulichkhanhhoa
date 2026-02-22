@@ -12,8 +12,7 @@ class Config:
     FLASK_ENV = os.environ.get('FLASK_ENV') or 'development'
     
     # Database
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = False
+    # SQLALCHEMY_ECHO = False
 
     # Google Gemini API
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
@@ -40,7 +39,7 @@ class Config:
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@123456')
     
     # Pagination
-    ITEMS_PER_PAGE = 12
+    ITEMS_PER_PAGE = 10
     
     # AI Settings
     AI_MAX_TOKENS = 2048
@@ -55,7 +54,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_ECHO = True
+    # SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'tourism.db')
 

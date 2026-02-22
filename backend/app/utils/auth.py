@@ -10,7 +10,7 @@ def admin_required(f):
         if not current_user.is_authenticated:
             return jsonify({'error': 'Vui lòng đăng nhập'}), 401
         
-        if not current_user.is_admin:
+        if not current_user.role == 'ADMIN':
             return jsonify({'error': 'Không có quyền truy cập'}), 403
         
         return f(*args, **kwargs)

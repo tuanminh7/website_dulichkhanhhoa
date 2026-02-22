@@ -4,12 +4,10 @@ from app.models.interaction import SavedItinerary
 from app.models.location import Location
 from app import db
 from datetime import datetime, timedelta
-import json
 from typing import List, Dict, Optional
 
 
 class ItineraryService:
-    """Service for managing travel itineraries"""
     
     def __init__(self):
         self.ai_service = None
@@ -21,16 +19,6 @@ class ItineraryService:
         return self.ai_service
     
     def generate_smart_itinerary(self, preferences: Dict, selected_places: Optional[List[int]] = None) -> Dict:
-        """
-        Generate smart itinerary based on preferences and selected places
-        
-        Args:
-            preferences: User preferences (duration, budget, interests, location, start_date)
-            selected_places: List of place IDs user selected
-        
-        Returns:
-            Dict with success status and itinerary data
-        """
         try:
             # Get selected places from database
             places_data = []
@@ -70,16 +58,6 @@ class ItineraryService:
             }
     
     def save_itinerary(self, user_id: int, itinerary_data: Dict) -> Dict:
-        """
-        Save itinerary to database
-        
-        Args:
-            user_id: User ID
-            itinerary_data: Itinerary data to save
-        
-        Returns:
-            Dict with success status and itinerary_id
-        """
         try:
             # Create new itinerary
             itinerary = SavedItinerary(
@@ -107,16 +85,7 @@ class ItineraryService:
             }
     
     def get_user_itineraries(self, user_id: int, limit: int = 20) -> List[Dict]:
-        """
-        Get user's saved itineraries
-        
-        Args:
-            user_id: User ID
-            limit: Maximum number of itineraries to return
-        
-        Returns:
-            List of itinerary dictionaries
-        """
+       
         try:
             itineraries = SavedItinerary.query.filter_by(
                 user_id=user_id
@@ -272,9 +241,14 @@ class ItineraryService:
                             if place_name in location:
                                 activity['place_id'] = place_data.get('id')
                                 activity['place_category'] = place_data.get('category')
-                                if 'coordinates' in place_data:
-                                    activity['coordinates'] = place_data['coordinates']
+                                if 'map_url' in place_data:
+                                    activity['map_url'] = place_data['map_url']
                                 break
+                        
+                        # If no place_id match, generate a generic search link if name is available
+                        if 'map_url' not in activity and activity.get('location'):
+                            from urllib.parse import quote
+                            activity['map_url'] = f"https://www.google.com/maps/search/?api=1&query={quote(activity['location'])}"
         
         # Calculate total cost if not present
         if 'estimated_cost' not in itinerary or itinerary['estimated_cost'] == 0:
@@ -304,16 +278,13 @@ class ItineraryService:
             'description': loc.description,
             'category_id': loc.category_id,
             'address': loc.address,
-            'coordinates': {
-                'lat': loc.latitude,
-                'lng': loc.longitude
-            } if loc.latitude and loc.longitude else None,
             'price_range': {
                 'min': loc.price_range_min,
                 'max': loc.price_range_max
             },
             'rating': loc.rating_avg,
-            'image_url': loc.images[0].image_url if loc.images.count() > 0 else None
+            'image_url': loc.images[0].image_url if loc.images.count() > 0 else None,
+            'map_url': loc.map_url
         }
     
     def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
