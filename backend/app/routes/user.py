@@ -15,6 +15,7 @@ def get_profile():
     result, status_code = user_service.get_profile(current_user)
     return jsonify(result), status_code
 
+
 @bp.route('/profile', methods=['PUT'])
 @login_required
 def update_profile():
@@ -23,12 +24,14 @@ def update_profile():
     result, status_code = user_service.update_profile(current_user, data)
     return jsonify(result), status_code
 
+
 @bp.route('/preferences', methods=['GET'])
 @login_required
 def get_preferences():
     """Lấy preferences của user"""
     result, status_code = user_service.get_preferences(current_user)
     return jsonify(result), status_code
+
 
 @bp.route('/preferences', methods=['PUT'])
 @login_required
@@ -37,6 +40,7 @@ def update_preferences():
     data = request.get_json()
     result, status_code = user_service.update_preferences(current_user, data)
     return jsonify(result), status_code
+
 
 @bp.route('/itineraries', methods=['GET'])
 @login_required
@@ -58,6 +62,7 @@ def get_itineraries():
         'current_page': page
     })
 
+
 @bp.route('/itineraries/<int:itinerary_id>', methods=['GET'])
 @login_required
 def get_itinerary(itinerary_id):
@@ -67,6 +72,7 @@ def get_itinerary(itinerary_id):
         return jsonify({'error': 'Không tìm thấy lịch trình'}), 404
     return jsonify(itinerary)
 
+
 @bp.route('/itineraries/<int:itinerary_id>', methods=['PUT'])
 @login_required
 def update_itinerary(itinerary_id):
@@ -75,12 +81,14 @@ def update_itinerary(itinerary_id):
     result = itinerary_service.update_itinerary(itinerary_id, current_user.id, data)
     return jsonify(result), 200 if result['success'] else 400
 
+
 @bp.route('/itineraries/<int:itinerary_id>', methods=['DELETE'])
 @login_required
 def delete_itinerary(itinerary_id):
     """Xóa lịch trình"""
     result = itinerary_service.delete_itinerary(itinerary_id, current_user.id)
     return jsonify(result), 200 if result['success'] else 400
+
 
 @bp.route('/reviews', methods=['GET'])
 @login_required
@@ -99,6 +107,7 @@ def get_reviews():
         'pages': pagination.pages,
         'current_page': page
     })
+
 
 @bp.route('/reviews/<int:review_id>', methods=['PUT'])
 @login_required

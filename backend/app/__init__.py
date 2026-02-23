@@ -9,6 +9,7 @@ import os
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
+cor = CORS()
 
 def create_app(config_name=None):
     if config_name is None:
@@ -21,7 +22,7 @@ def create_app(config_name=None):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
-    CORS(app)
+    cor.init_app(app=app, resources={"/api/*": {"origins": "http://localhost:5173"}})
     
     login_manager.login_view = 'auth.login'
     

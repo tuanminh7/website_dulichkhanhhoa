@@ -15,12 +15,14 @@ def admin_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
+
 @bp.route('/dashboard', methods=['GET'])
 @admin_required
 def get_dashboard():
     """Get admin dashboard statistics"""
     result, status_code = admin_service.get_dashboard_stats()
     return jsonify(result), status_code
+
 
 @bp.route('/users', methods=['GET'])
 @admin_required
@@ -33,6 +35,7 @@ def get_users():
     result, status_code = admin_service.get_users(params)
     return jsonify(result), status_code
 
+
 @bp.route('/users/<int:user_id>/toggle-active', methods=['POST'])
 @admin_required
 def toggle_user_active(user_id):
@@ -40,12 +43,14 @@ def toggle_user_active(user_id):
     result, status_code = admin_service.toggle_user_active(user_id, current_user)
     return jsonify(result), status_code
 
+
 @bp.route('/users/<int:user_id>/make-admin', methods=['POST'])
 @admin_required
 def make_admin(user_id):
     """Make user admin"""
     result, status_code = admin_service.make_admin(user_id)
     return jsonify(result), status_code
+
 
 @bp.route('/analytics', methods=['GET'])
 @admin_required

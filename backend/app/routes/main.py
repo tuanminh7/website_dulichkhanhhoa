@@ -4,51 +4,6 @@ from sqlalchemy import func
 
 bp = Blueprint('main', __name__)
 
-@bp.route('/')
-def index():
-    """Trang chủ"""
-    return render_template('index.html')
-
-
-@bp.route('/places')
-def places():
-    """Trang danh sách địa điểm"""
-    return render_template('places.html')
-########### them route hiện thị địa điểm 
-@bp.route('/places/<int:place_id>')
-def place_detail(place_id):
-    """Trang chi tiết địa điểm"""
-    return render_template('place_detail.html')
-
-
-@bp.route('/chat')
-def chat():
-    """Trang chat AI"""
-    return render_template('chat.html')
-
-
-@bp.route('/about')
-def about():
-    """Trang giới thiệu"""
-    return render_template('about.html')
-
-
-@bp.route('/login')
-def login():
-    """Trang đăng nhập"""
-    return render_template('login.html')
-
-
-@bp.route('/register')
-def register():
-    """Trang đăng ký"""
-    return render_template('register.html')
-
-@bp.route('/admin')
-def admin():
-    """Trang admin"""
-    return render_template('admin.html')
-
 @bp.route('/api/stats')
 def get_stats():
     """Get system statistics"""

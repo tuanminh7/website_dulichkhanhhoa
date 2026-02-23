@@ -71,6 +71,16 @@ class PlacesService:
             return location.to_dict(), 200
         except Exception as e:
             return {'error': str(e)}, 500
+        
+
+    @staticmethod
+    def get_place_by_name(place_name, address=None):
+        """Get a single place by ID"""
+        try:
+            location = Location.query.get_or_404(place_name, address)
+            return location.to_dict(), 200
+        except Exception as e:
+            return {'error': str(e)}, 500
 
     @staticmethod
     def create_place(data, files):

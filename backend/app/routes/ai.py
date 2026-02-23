@@ -1,3 +1,5 @@
+import json, uuid
+
 from flask import Blueprint, request, jsonify, session
 from flask_login import current_user
 from app.services.ai_service import get_ai_service
@@ -5,9 +7,8 @@ from app.services.itinerary_service import get_itinerary_service
 from app.models.ai import ChatSession
 from app.models.location import Location
 from app import db
-import json
-import uuid
 from datetime import datetime
+
 
 bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -248,5 +249,3 @@ def delete_chat_session(session_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-
-from datetime import datetime

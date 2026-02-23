@@ -118,3 +118,4 @@ class OpeningHour(db.Model):
             'open_time': self.open_time.strftime('%H:%M') if self.open_time else None,
             'close_time': self.close_time.strftime('%H:%M') if self.close_time else None
         }
+
