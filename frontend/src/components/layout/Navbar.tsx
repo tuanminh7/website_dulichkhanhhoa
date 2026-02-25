@@ -1,11 +1,11 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar: React.FC = () => {
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const { user, logout, isAdmin } = useAuth();
     const navigate = useNavigate();
 
@@ -21,17 +21,18 @@ const Navbar: React.FC = () => {
         { name: 'Tư vấn AI', path: '/chatbot' },
     ];
 
+
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-3xl border-b border-gray-100 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20 items-center">
                     <div className="flex items-center">
-                        <Link to="/" className="flex-shrink-0 flex items-center group">
+                        <Link to="/" className="shrink-0 flex items-center group">
                             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white mr-3 shadow-lg shadow-blue-500/30 group-hover:rotate-12 transition-transform">
-                                <span className="font-black text-xl">N</span>
+                                <span className="font-black text-xl">K</span>
                             </div>
-                            <span className="text-xl font-extrabold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                                NhaTrang<span className="text-blue-600">Travel</span>
+                            <span className="text-xl font-extrabold bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                                KhanhHoa<span className="text-blue-600">Travel</span>
                             </span>
                         </Link>
                     </div>
@@ -40,22 +41,32 @@ const Navbar: React.FC = () => {
                     <div className="hidden md:block">
                         <div className="ml-10 flex items-baseline space-x-2">
                             {navLinks.map((link) => (
-                                <Link
+                                <NavLink
                                     key={link.path}
                                     to={link.path}
-                                    className="text-gray-600 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:bg-blue-50"
+                                    className={({ isActive }) =>
+                                        `px-4 py-2 rounded-xl text-sm font-bold transition-all ${isActive
+                                            ? 'text-blue-600 bg-blue-50'
+                                            : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                                        }`
+                                    }
                                 >
                                     {link.name}
-                                </Link>
+                                </NavLink>
                             ))}
                             {isAdmin && (
-                                <Link
+                                <NavLink
                                     to="/admin"
-                                    className="text-purple-600 hover:text-purple-700 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:bg-purple-50 flex items-center"
+                                    className={({ isActive }) =>
+                                        `px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${isActive
+                                            ? 'text-purple-700 bg-purple-50'
+                                            : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
+                                        }`
+                                    }
                                 >
                                     <LayoutDashboard className="w-4 h-4 mr-1" />
                                     Admin
-                                </Link>
+                                </NavLink>
                             )}
                         </div>
                     </div>
@@ -88,6 +99,7 @@ const Navbar: React.FC = () => {
                         )}
                     </div>
 
+
                     {/* Mobile menu button */}
                     <div className="md:hidden flex items-center">
                         <button
@@ -111,23 +123,33 @@ const Navbar: React.FC = () => {
                     >
                         <div className="px-4 pt-4 pb-6 space-y-2">
                             {navLinks.map((link) => (
-                                <Link
+                                <NavLink
                                     key={link.path}
                                     to={link.path}
                                     onClick={() => setIsOpen(false)}
-                                    className="block text-gray-700 hover:text-blue-600 px-4 py-3 rounded-xl text-base font-bold hover:bg-blue-50"
+                                    className={({ isActive }) =>
+                                        `block px-4 py-3 rounded-xl text-base font-bold ${isActive
+                                            ? 'text-blue-600 bg-blue-50'
+                                            : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
+                                        }`
+                                    }
                                 >
                                     {link.name}
-                                </Link>
+                                </NavLink>
                             ))}
                             {isAdmin && (
-                                <Link
+                                <NavLink
                                     to="/admin"
                                     onClick={() => setIsOpen(false)}
-                                    className="block text-purple-600 hover:text-purple-700 px-4 py-3 rounded-xl text-base font-bold hover:bg-purple-50"
+                                    className={({ isActive }) =>
+                                        `block px-4 py-3 rounded-xl text-base font-bold ${isActive
+                                            ? 'text-purple-700 bg-purple-50'
+                                            : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
+                                        }`
+                                    }
                                 >
                                     Quản trị hệ thống
-                                </Link>
+                                </NavLink>
                             )}
                             <div className="pt-4 mt-2 border-t border-gray-50">
                                 {user ? (

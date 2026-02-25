@@ -22,9 +22,9 @@ const Chatbot: React.FC = () => {
         }
     }, [currentSessionId]);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isTyping]);
+    // useEffect(() => {
+    //     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // }, [messages, isTyping]);
 
     const fetchSessions = async () => {
         try {
@@ -84,7 +84,7 @@ const Chatbot: React.FC = () => {
     };
 
     return (
-        <div className="pt-16 h-screen bg-gray-50 flex flex-col md:flex-row overflow-hidden">
+        <div className="pt-20 h-screen bg-gray-50 flex flex-col md:flex-row overflow-hidden">
             {/* Sidebar - Chat History */}
             <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full md:block hidden">
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -100,7 +100,7 @@ const Chatbot: React.FC = () => {
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="flex-grow overflow-y-auto p-3 space-y-2">
+                <div className="grow overflow-y-auto p-3 space-y-2">
                     {sessions.map(s => (
                         <button
                             key={s.id}
@@ -120,7 +120,7 @@ const Chatbot: React.FC = () => {
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-grow flex flex-col h-full relative">
+            <div className="grow flex flex-col h-full relative">
                 {/* Chat Header */}
                 <div className="bg-white p-4 border-b border-gray-100 flex justify-between items-center shadow-sm">
                     <div className="flex items-center">
@@ -143,7 +143,7 @@ const Chatbot: React.FC = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-grow overflow-y-auto p-6 space-y-6">
+                <div className="grow overflow-y-auto p-6 space-y-6">
                     <AnimatePresence>
                         {messages.length === 0 && (
                             <motion.div
@@ -168,7 +168,7 @@ const Chatbot: React.FC = () => {
                                 className={`flex ${msg.sender_type === 'USER' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div className={`flex max-w-[80%] ${msg.sender_type === 'USER' ? 'flex-row-reverse' : 'flex-row'} items-end`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender_type === 'USER' ? 'ml-3 bg-gray-200 text-gray-600' : 'mr-3 bg-blue-100 text-blue-600'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.sender_type === 'USER' ? 'ml-3 bg-gray-200 text-gray-600' : 'mr-3 bg-blue-100 text-blue-600'}`}>
                                         {msg.sender_type === 'USER' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                     </div>
                                     <div className={`p-4 rounded-2xl shadow-sm ${msg.sender_type === 'USER' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
@@ -196,13 +196,14 @@ const Chatbot: React.FC = () => {
                 {/* Input Area */}
                 <div className="p-6 bg-white border-t border-gray-100">
                     <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto flex gap-3">
-                        <div className="flex-grow relative">
+                        <div className="grow relative">
                             <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder="Nhập câu hỏi của bạn..."
                                 className="w-full p-4 pr-12 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm"
+                                autoFocus
                             />
                             <button
                                 type="button"
@@ -215,7 +216,7 @@ const Chatbot: React.FC = () => {
                         <button
                             type="submit"
                             disabled={!input.trim() || !currentSessionId}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center flex-shrink-0"
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center shrink-0"
                         >
                             <Send className="w-5 h-5" />
                         </button>

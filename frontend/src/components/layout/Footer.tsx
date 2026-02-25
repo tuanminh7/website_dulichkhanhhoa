@@ -10,9 +10,9 @@ const Footer: React.FC = () => {
                     <div className="col-span-1 lg:col-span-1">
                         <Link to="/" className="flex items-center mb-8">
                             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white mr-4 shadow-xl shadow-blue-500/20">
-                                <span className="font-black text-2xl">N</span>
+                                <span className="font-black text-2xl">K</span>
                             </div>
-                            <span className="text-2xl font-black tracking-tighter">NhaTrang<span className="text-blue-500">Travel</span></span>
+                            <span className="text-2xl font-black tracking-tighter">KhanhHoa<span className="text-blue-500">Travel</span></span>
                         </Link>
                         <p className="text-gray-500 font-medium leading-relaxed mb-8">
                             Nền tảng du lịch thông minh hỗ trợ bởi AI, giúp bạn khám phá vẻ đẹp tuyệt vời của Khánh Hòa một cách dễ dàng và hiệu quả nhất.
@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
                     </div>
 
                     <div>
-                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-blue-500 text-xs">Liên kết nhanh</h4>
+                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-blue-500">Liên kết nhanh</h4>
                         <ul className="space-y-4">
                             {[
                                 { name: 'Điểm đến nổi bật', path: '/locations' },
@@ -47,7 +47,7 @@ const Footer: React.FC = () => {
                     </div>
 
                     <div>
-                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-teal-500 text-xs">Pháp lý & Hỗ trợ</h4>
+                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-teal-500">Pháp lý & Hỗ trợ</h4>
                         <ul className="space-y-4">
                             {[
                                 { name: 'Về chúng tôi', path: '/about' },
@@ -64,22 +64,22 @@ const Footer: React.FC = () => {
                     </div>
 
                     <div>
-                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-orange-500 text-xs">Thông tin liên hệ</h4>
+                        <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-10 text-orange-500">Thông tin liên hệ</h4>
                         <div className="space-y-6">
                             <div className="flex items-start">
-                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 border border-white/5">
+                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 shrink-0 border border-white/5">
                                     <MapPin className="w-5 h-5 text-gray-400" />
                                 </div>
-                                <p className="text-gray-400 text-sm font-medium leading-relaxed">01 Trần Phú, Lộc Thọ, Thành phố Nha Trang, Khánh Hòa</p>
+                                <p className="text-gray-400 text-sm font-medium leading-relaxed">Xã Ninh Phước, Ninh Thuận, Khánh Hòa</p>
                             </div>
                             <div className="flex items-center">
-                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 border border-white/5">
+                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 shrink-0 border border-white/5">
                                     <Phone className="w-5 h-5 text-gray-400" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-medium">+84 123 456 789</p>
                             </div>
                             <div className="flex items-center">
-                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 flex-shrink-0 border border-white/5">
+                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center mr-4 shrink-0 border border-white/5">
                                     <Mail className="w-5 h-5 text-gray-400" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-medium">contact@nhatrangtravel.vn</p>
