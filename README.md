@@ -432,7 +432,7 @@ Dự án này được phát hành dưới giấy phép MIT License - xem file [
 ## 🙏 Cảm ơn
 
 - [Flask](https://flask.palletsprojects.com/) - Web framework
-- [OpenAI](https://openai.com/) - AI API
+- [Gemini]
 - [Google Maps Platform](https://developers.google.com/maps) - Maps API
 - [Bootstrap](https://getbootstrap.com/) - UI framework
 
