@@ -26,7 +26,7 @@ def chat():
         session_id = data.get('session_id') or str(uuid.uuid4())
         
         # Get chat history
-        chat_session = ChatSession.query.filter_by(session_id=session_id).first()
+        chat_session = ChatSession.query.filter_by(id=session_id).first()
         chat_history = []
         
         if chat_session:
@@ -35,11 +35,12 @@ def chat():
         else:
             # Create new session
             chat_session = ChatSession(
-                session_id=session_id,
+                id=session_id,
                 user_id=current_user.id if current_user.is_authenticated else None,
                 title=message[:100]
             )
             db.session.add(chat_session)
+        
         
         # Build context
         context = {}

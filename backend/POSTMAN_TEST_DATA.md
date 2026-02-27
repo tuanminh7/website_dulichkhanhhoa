@@ -117,6 +117,60 @@ Tài liệu này cung cấp các mẫu dữ liệu (JSON) để bạn dễ dàng
 
 ---
 
+## 5. AI Chat & Hỗ trợ thông minh (AI Chatbot)
+
+### 💬 Chat với AI (Chat with AI)
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/ai/chat`
+- **Body (JSON)**:
+```json
+{
+    "message": "Cho tôi biết các địa điểm tham quan nổi tiếng ở Nha Trang!",
+    "session_id": null
+}
+```
+> [!TIP]
+> **session_id**: Bạn có thể gửi `null` cho tin nhắn đầu tiên. Server sẽ trả về một `session_id`. Hãy dùng ID đó cho các tin nhắn tiếp theo để AI nhớ ngữ cảnh.
+
+### 🔄 Tiếp tục trò chuyện (Continue Chat)
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/ai/chat`
+- **Body (JSON)**:
+```json
+{
+    "message": "Thế còn ẩm thực thì sao? Chỗ nào ăn ngon?",
+    "session_id": "paste-your-session-id-here"
+}
+```
+
+### 📍 Hỏi về địa điểm cụ thể (Ask about Specific Places)
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/ai/chat`
+- **Body (JSON)**:
+```json
+{
+    "message": "Tôi nên đi đâu trong số các địa điểm này?",
+    "place_ids": [1, 2, 5],
+    "session_id": null
+}
+```
+
+### 💰 Ước tính chi phí (Estimate Cost - AI driven)
+- **Method**: `POST`
+- **URL**: `{{base_url}}/api/ai/estimate-cost`
+- **Body (JSON)**:
+```json
+{
+    "itinerary": {
+        "days": 3,
+        "places": ["Tháp Bà Ponagar", "Vinpearl Harbour", "Bãi Tranh"],
+        "budget": "ECONOMY"
+    }
+}
+```
+
+---
+
 ## 💡 Lưu ý quan trọng
 - **Base URL**: Thường là `http://127.0.0.1:5000` (nếu chạy local).
 - **Cookies**: Postman tự động lưu Session Cookie sau khi Login, nên các request sau đó (như `/me` hoặc `/places` POST) sẽ tự động được authenticate.

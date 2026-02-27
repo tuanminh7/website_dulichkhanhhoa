@@ -29,18 +29,21 @@ class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     name = db.Column(db.String(200), nullable=False, index=True)
+
     description = db.Column(db.Text)
     address = db.Column(db.String(300))
+    
     price_range_min = db.Column(db.Float)
     price_range_max = db.Column(db.Float)
+    
     rating_avg = db.Column(db.Float, default=0.0)
     status = db.Column(db.Enum('ACTIVE', 'INACTIVE', name='location_status'), default='ACTIVE')
+    
     path = db.Column(db.JSON)  # For Tours: list of destination names or {"name": "...", "address": "..."}
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     images = db.relationship('LocationImage', backref='location', lazy='dynamic', cascade='all, delete-orphan')
     opening_hours = db.relationship('OpeningHour', backref='location', lazy='dynamic', cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='location', lazy='dynamic', cascade='all, delete-orphan')
