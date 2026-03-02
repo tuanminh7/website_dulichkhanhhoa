@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.services.places_service import PlacesService
 
-bp = Blueprint('places', __name__, url_prefix='/api/places')
+bp = Blueprint('places', __name__, url_prefix='/api/locations')
 
 
 @bp.route('', methods=['GET'])

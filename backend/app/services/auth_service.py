@@ -1,9 +1,11 @@
-from flask import current_app
+import re, json
+
+from flask import current_app, session
 from flask_login import login_user, logout_user
 from app.models.user import User
 from app import db
-import re
-import json
+from flask_jwt_extended import (create_access_token, create_refresh_token, )
+
 
 def validate_email(email) -> bool:
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -62,14 +64,21 @@ class AuthService:
 
             # Login
             login_user(user, remember=remember)
+            # session['user_id'] = user.id
+
+            a_token = create_access_token(identity=email)
+            r_token = create_refresh_token(identity=email)
 
             return {
                 'message': 'Đăng nhập thành công',
+                "access_token": a_token, 
+                "refresh_token": r_token,
                 'user': user.to_dict()
             }, 200
 
         except Exception as e:
             return {'error': str(e)}, 500
+
 
     @staticmethod
     def logout_user():
@@ -78,6 +87,7 @@ class AuthService:
             return {'message': 'Đăng xuất thành công'}, 200
         except Exception as e:
             return {'error': str(e)}, 500
+
 
     @staticmethod
     def change_password(user, old_password, new_password):
@@ -118,6 +128,9 @@ class AuthService:
         except Exception as e:
             db.session.rollback()
             return {'error': str(e)}, 500
+
+        
+
 
 def get_auth_service():
     return AuthService()

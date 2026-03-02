@@ -33,6 +33,10 @@ class Config:
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Authentication
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=4)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Admin
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@tourism.com')
