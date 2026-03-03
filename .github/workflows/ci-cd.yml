@@ -86,5 +86,5 @@ jobs:
             docker image prune -af
 
             echo "Đang đợi database (postgesSQL-container) khởi chạy........"
-            sleep 5
+            sleep 15
             docker compose exec -T backend flask db upgrade
