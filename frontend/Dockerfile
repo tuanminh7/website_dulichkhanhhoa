@@ -1,5 +1,5 @@
 # REACTJS
-FROM node:18-alpine
+FROM node:18-alpine as build-stage
 WORKDIR /webapp
 COPY . .
 RUN npm install
