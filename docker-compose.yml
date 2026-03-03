@@ -12,7 +12,7 @@ services:
   backend:
     # build: ./backend
     restart: always
-    image: ghcr.io/nth-nguyen3006/website_dulichkhanhhoa/flask-backend:latest
+    image: ghcr.io/tuanminh7/flask-backend:latest
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     depends_on:
@@ -21,7 +21,7 @@ services:
   frontend:
     # build: ./frontend
     restart: always
-    image: ghcr.io/nth-nguyen3006/website_dulichkhanhhoa/react-frontend:latest
+    image: ghcr.io/tuanminh7/react-frontend:latest
     ports:
       - "80:80"
       - "443:443"
