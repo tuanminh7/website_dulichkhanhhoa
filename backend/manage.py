@@ -5,13 +5,13 @@ app = create_app(os.getenv('FLASK_ENV', 'development'))
 
 def main():
     args: list = sys.argv
-    print(sys.argv)
+    try:
+        from app.utils import excute_prompt
+        excute_prompt.controller(*sys.argv)
+    except ImportError as e:
+        raise e
 
-    if len(args) > 1:
-        prompt_command = args[-1]
-        if prompt_command == "run":
-            app.run(debug=True)
-    
 
+# gunicorn --bind 0.0.0.0:5000 manage:app
 if __name__ == "__main__":
     main()

@@ -3,7 +3,6 @@ from app import db
 
 
 class Category(db.Model):
-    """Category of travel content (e.g., Attraction, Food, Stay)"""
     __tablename__ = 'categories'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -25,30 +24,51 @@ class Category(db.Model):
 
 
 class Location(db.Model):
-    """Detailed information about a location"""
     __tablename__ = 'locations'
     
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     name = db.Column(db.String(200), nullable=False, index=True)
+
     description = db.Column(db.Text)
     address = db.Column(db.String(300))
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
+    
     price_range_min = db.Column(db.Float)
     price_range_max = db.Column(db.Float)
+    
     rating_avg = db.Column(db.Float, default=0.0)
     status = db.Column(db.Enum('ACTIVE', 'INACTIVE', name='location_status'), default='ACTIVE')
+    
+    path = db.Column(db.JSON)  # For Tours: list of destination names or {"name": "...", "address": "..."}
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     images = db.relationship('LocationImage', backref='location', lazy='dynamic', cascade='all, delete-orphan')
     opening_hours = db.relationship('OpeningHour', backref='location', lazy='dynamic', cascade='all, delete-orphan')
-    reviews = db.relationship('Review', backref='location', lazy='dynamic', cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='location', lazy='dynamic', cascade='all, delete-orphan')
     
+
+    @property
+    def map_url(self):
+        from urllib.parse import quote
+        
+        if self.path and isinstance(self.path, list):
+            origin = quote(self.name)
+            dest = quote(self.path[-1])
+            waypoints = "|".join([quote(p) for p in self.path[:-1]])
+            
+            url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={dest}"
+            if waypoints:
+                url += f"&waypoints={waypoints}"
+            return url
+        
+        search_query = self.name
+        if self.address:
+            search_query += f" {self.address}"
+        return f"https://www.google.com/maps/search/?api=1&query={quote(search_query)}"
+
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -56,12 +76,12 @@ class Location(db.Model):
             'name': self.name,
             'description': self.description,
             'address': self.address,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
             'price_range_min': self.price_range_min,
             'price_range_max': self.price_range_max,
             'rating_avg': self.rating_avg,
-            'status': self.status
+            'status': self.status,
+            'path': self.path,
+            'map_url': self.map_url
         }
 
 
@@ -101,3 +121,4 @@ class OpeningHour(db.Model):
             'open_time': self.open_time.strftime('%H:%M') if self.open_time else None,
             'close_time': self.close_time.strftime('%H:%M') if self.close_time else None
         }
+

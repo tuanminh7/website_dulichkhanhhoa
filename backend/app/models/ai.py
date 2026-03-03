@@ -30,7 +30,7 @@ class ChatMessage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False)
-    sender_type = db.Column(db.Enum('USER', 'AI', name='sender_types'), nullable=False)
+    sender_type = db.Column(db.Enum('USER', 'MODEL', name='sender_types'), nullable=False)
     message_content = db.Column(db.Text, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -12,12 +12,11 @@ class Config:
     FLASK_ENV = os.environ.get('FLASK_ENV') or 'development'
     
     # Database
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = False
+    # SQLALCHEMY_ECHO = False
 
     # Google Gemini API
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-    GEMINI_MODEL = 'gemini-3-flash-preview' 
+    GEMINI_MODEL = os.environ.get('GEMINI_MODEL') 
     
     # Google Maps API
     # GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
@@ -34,13 +33,17 @@ class Config:
     SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # Authentication
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=4)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     # Admin
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@tourism.com')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@123456')
     
     # Pagination
-    ITEMS_PER_PAGE = 12
+    ITEMS_PER_PAGE = 10
     
     # AI Settings
     AI_MAX_TOKENS = 2048
@@ -55,7 +58,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_ECHO = True
+    # SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'tourism.db')
 
