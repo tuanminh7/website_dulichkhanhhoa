@@ -43,11 +43,13 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      # BƯỚC MỚI 1: Lấy mã nguồn từ GitHub về máy ảo Action để có file docker-compose.yml
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # BƯỚC MỚI 2: Đẩy file docker-compose.yml và thư mục nginx lên server
+      - name: Lowercase repo owner name
+        run: |
+          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_EN
+
       - name: Copy config files to server
         uses: appleboy/scp-action@master
         with:
