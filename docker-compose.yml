@@ -12,7 +12,7 @@ services:
   backend:
     # build: ./backend
     restart: always
-    image: ghcr.io/NTH-Nguyen3006/flask-backend:latest
+    image: ghcr.io/nth-nguyen3006/website_dulichkhanhhoa/flask-backend:latest
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     depends_on:
@@ -21,7 +21,7 @@ services:
   frontend:
     # build: ./frontend
     restart: always
-    image: ghcr.io/NTH-Nguyen3006/react-frontend:latest
+    image: ghcr.io/nth-nguyen3006/website_dulichkhanhhoa/react-frontend:latest
     ports:
       - "80:80"
       - "443:443"
@@ -39,7 +39,7 @@ services:
       - frontend
       - backend
 
-      
+
 volumes:
   postgres_data:
 
