@@ -15,6 +15,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Lowercase repo owner name
+        run: |
+          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -29,7 +33,7 @@ jobs:
           context: ./backend
           push: true
           # tags: ghcr.io/${{ github.repository_owner }}/flask-backend:latest
-          tags: ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/flask-backend:latest
+          tags: ghcr.io/${{ env.REPO_OWNER }}/flask-backend:latest
 
       # Build & Push Frontend
       - name: Build and push Frontend
@@ -37,7 +41,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ghcr.io/${GITHUB_REPOSITORY_OWNER@L}/react-frontend:latest
+          tags: ghcr.io/${{ env.REPO_OWNER }}/react-frontend:latest
 
   deploy:
     needs: build-and-push
