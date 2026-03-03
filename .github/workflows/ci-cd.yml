@@ -42,6 +42,22 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      # BƯỚC MỚI 1: Lấy mã nguồn từ GitHub về máy ảo Action để có file docker-compose.yml
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # BƯỚC MỚI 2: Đẩy file docker-compose.yml và thư mục nginx lên server
+      - name: Copy config files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          # Gửi file docker-compose và toàn bộ thư mục nginx (chứa default.conf)
+          source: "docker-compose.yml,nginx/"
+          target: "/root/webapp"
+
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -50,6 +66,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
+            mkdir -p /root/webapp
             cd /root/webapp
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cat <<EOF > .env
