@@ -52,7 +52,7 @@ jobs:
 
       - name: Lowercase repo owner name
         run: |
-          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_EN
+          echo "REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Copy config files to server
         uses: appleboy/scp-action@master
