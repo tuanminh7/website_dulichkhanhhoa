@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 group hover:shadow-xl transition-all"
+                            className="bg-white p-6 rounded-4xl shadow-sm border border-gray-100 group hover:shadow-xl transition-all"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className={`p-3 rounded-2xl ${card.color} text-white shadow-lg`}>
@@ -89,7 +89,7 @@ const Dashboard: React.FC = () => {
                                         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4 group-hover:bg-blue-50 transition-colors">
                                             <Activity className="w-6 h-6 text-gray-400 group-hover:text-blue-600" />
                                         </div>
-                                        <div className="flex-grow pb-6 border-b border-gray-50 flex justify-between items-center">
+                                        <div className="grow pb-6 border-b border-gray-50 flex justify-between items-center">
                                             <div>
                                                 <p className="font-bold text-gray-800">Người dùng mới đăng ký</p>
                                                 <p className="text-sm text-gray-400">nguyen@example.com vừa tạo tài khoản</p>
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
                                 {stats?.most_visited_locations?.map((loc: any, idx) => (
                                     <div key={idx} className="flex items-center p-4 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-blue-50">
                                         <div className="w-10 h-10 font-black text-xl text-gray-200 mr-4">0{idx + 1}</div>
-                                        <div className="flex-grow">
+                                        <div className="grow">
                                             <p className="font-bold text-gray-800">{loc.name || 'Địa điểm du lịch'}</p>
                                             <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
                                                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }} />

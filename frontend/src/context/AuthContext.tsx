@@ -16,9 +16,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
+    useEffect(() => { checkAuth() }, []);
 
     const checkAuth = async () => {
         const token = localStorage.getItem('token');
@@ -26,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(false);
             return;
         }
+
         try {
             const res = await authService.getMe();
             setUser(res.data);

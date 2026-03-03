@@ -8,6 +8,8 @@ import Stay from './pages/guest/Stay';
 import Chatbot from './pages/guest/Chatbot';
 import CostEstimation from './pages/guest/CostEstimation';
 import Login from './pages/guest/Login';
+import Register from './pages/guest/Register';
+import ForgotPassword from './pages/guest/ForgotPassword';
 import Profile from './pages/user/Profile';
 import Itineraries from './pages/user/Itineraries';
 import Dashboard from './pages/admin/Dashboard';
@@ -29,6 +31,8 @@ function App() {
         <Route path="chatbot" element={<Chatbot />} />
         <Route path="costs" element={<CostEstimation />} />
         <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* Admin routes */}

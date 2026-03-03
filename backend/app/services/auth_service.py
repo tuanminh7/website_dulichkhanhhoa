@@ -4,7 +4,7 @@ from flask import current_app, session
 from flask_login import login_user, logout_user
 from app.models.user import User
 from app import db
-from flask_jwt_extended import (create_access_token, create_refresh_token, )
+from flask_jwt_extended import (create_access_token, create_refresh_token)
 
 
 def validate_email(email) -> bool:
@@ -16,6 +16,7 @@ def validate_password(password) -> tuple[bool, str]:
     if len(password) < 6:
         return False, "Mật khẩu phải có ít nhất 6 ký tự"
     return True, None
+
 
 class AuthService:
     @staticmethod

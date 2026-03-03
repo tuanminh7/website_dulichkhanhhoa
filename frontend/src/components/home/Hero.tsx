@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
                     backgroundImage: "url('https://static.homedy.com/src/images/location-reviews/khanh-hoa/nha-trang/1.jpg')",
                 }}
             >
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+                <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60" />
             </div>
 
             {/* Content */}
@@ -29,7 +29,7 @@ const Hero: React.FC = () => {
                     </span>
 
 
-                    <h1 className="text-6xl md:text-8xl font-black text-white mb-8 leading-[1.05] tracking-tight  uppercase">
+                    <h1 className="text-6xl md:text-8xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
                         Vẻ đẹp
                         <br />
                         <span className="text-emerald-400">Tuyệt diệu</span>
@@ -44,7 +44,7 @@ const Hero: React.FC = () => {
 
                     <div className="w-full max-w-xl bg-white/10 backdrop-blur-xl p-2 rounded-2xl border border-white/20 shadow-2xl">
                         <div className="flex flex-col md:flex-row gap-2">
-                            <div className="flex-grow relative">
+                            <div className="grow relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                 <input
                                     type="text"

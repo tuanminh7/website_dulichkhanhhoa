@@ -11,7 +11,7 @@ def main():
     except ImportError as e:
         raise e
 
-    
+
 # gunicorn --bind 0.0.0.0:5000 manage:app
 if __name__ == "__main__":
     main()

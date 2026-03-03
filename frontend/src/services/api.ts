@@ -53,9 +53,10 @@ export const dishService = {
 };
 
 export const authService = {
-    login: (credentials: any) => api.post<{ token: string, user: User }>('/auth/login', credentials),
+    login: (credentials: any) => api.post<{ token: string, user: User }>('/auth/login', credentials, { withCredentials: true }),
     register: (data: any) => api.post('/auth/register', data),
     getMe: () => api.get<User>('/auth/me'),
+    forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
 };
 
 export const chatService = {

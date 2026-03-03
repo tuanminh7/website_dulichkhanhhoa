@@ -53,7 +53,7 @@ const Profile: React.FC = () => {
                                         <User className="w-16 h-16" />
                                     )}
                                     <div className="absolute bottom-0 right-0 bg-teal-500 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-white" title="Verified Account">
-                                        <ChevronRight className="w-6 h-6 rotate-[-90deg]" />
+                                        <ChevronRight className="w-6 h-6 -rotate-90" />
                                     </div>
                                 </div>
                                 <h2 className="text-2xl font-bold text-gray-900">{user.fullname}</h2>
@@ -119,7 +119,7 @@ const Profile: React.FC = () => {
                                             <div className="w-24 h-full bg-gray-200 overflow-hidden">
                                                 <img src={fav.location?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544918877-460635b64a36?q=80&w=2070&auto=format&fit=crop'} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                             </div>
-                                            <div className="p-4 flex-grow">
+                                            <div className="p-4 grow">
                                                 <h4 className="font-bold text-gray-900 line-clamp-1">{fav.location?.name}</h4>
                                                 <p className="text-xs text-gray-500 mt-1 flex items-center">
                                                     <MapPin className="w-3 h-3 mr-1" />

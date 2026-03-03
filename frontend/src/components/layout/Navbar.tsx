@@ -76,9 +76,9 @@ const Navbar: React.FC = () => {
                             <div className="flex items-center space-x-3">
                                 <Link to="/profile" className="flex items-center gap-2 p-1.5 pr-4 bg-gray-50 rounded-full hover:bg-gray-100 transition-all border border-gray-100">
                                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                                        {user.avatar ? <img src={user.avatar} alt="" className="w-full h-full object-cover" /> : user.fullname[0]}
+                                        <img src={user.avatar || '/avatar-holder.svg'} alt="" className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="text-sm font-bold text-gray-700">{user.fullname.split(' ').pop()}</span>
+                                    <span className="text-sm font-bold text-gray-700">{user.fullname}</span>
                                 </Link>
                                 <button
                                     onClick={handleLogout}
@@ -96,6 +96,7 @@ const Navbar: React.FC = () => {
                                 <LogIn className="w-4 h-4 mr-2" />
                                 Đăng nhập
                             </Link>
+
                         )}
                     </div>
 
@@ -156,7 +157,7 @@ const Navbar: React.FC = () => {
                                     <div className="space-y-2">
                                         <Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center p-4 bg-gray-50 rounded-2xl">
                                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4 font-bold">
-                                                {user.avatar ? <img src={user.avatar} alt="" className="w-full h-full rounded-full" /> : user.fullname[0]}
+                                                {user.avatar ? <img src={user.avatar} alt="" className="w-full h-full rounded-full" /> : user.fullname}
                                             </div>
                                             <div>
                                                 <p className="font-bold text-gray-900">{user.fullname}</p>
