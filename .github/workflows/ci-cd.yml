@@ -85,14 +85,6 @@ jobs:
             docker compose up -d --remove-orphans
             docker image prune -af
 
-            echo "Đang đợi database khởi chạy (thông qua Docker healthcheck)..."
-            # Wait for backend to be healthy (which depends on db being healthy)
-            for i in {1..20}; do
-              if [ "$(docker inspect -f '{{.State.Health.Status}}' website_dulichkhanhhoa-db-1)" == "healthy" ]; then
-                break
-              fi
-              echo "Database chưa sẵn sàng, chờ thêm 2 giây..."
-              sleep 2
-            done
-
+            echo "Đang đợi database (postgesSQL-container) khởi chạy........"
+            sleep 15
             docker compose exec -T backend flask db upgrade

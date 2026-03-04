@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # EXPOSE 5000
 
-CMD [ "sh", "-c", "python wait_for_db.py && gunicorn --bind 0.0.0.0:5000 manage:app" ]
+CMD [ "gunicorn", "--bind", " 0.0.0.0:5000", "manage:app" ]
