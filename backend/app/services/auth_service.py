@@ -20,9 +20,8 @@ def validate_password(password) -> tuple[bool, str]:
 
 class AuthService:
     @staticmethod
-    def register_user(email, password):
+    def register_user(email, password, fullname, phone):
         try:
-            # Validation
             if not email or not password:
                 return {'error': 'Vui lòng điền đầy đủ thông tin'}, 400
 
@@ -37,7 +36,7 @@ class AuthService:
                 return {'error': 'Email đã được đăng ký'}, 400
 
             # Create user
-            user = User(email=email)
+            user = User(email=email, fullname=fullname, phone=phone[1:])
             user.set_password(password)
 
             db.session.add(user)

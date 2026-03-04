@@ -8,12 +8,15 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.form
     email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '')
+    fullname = data.get('fullname', '')
     password = data.get('password', '')
-    
-    result, status_code = AuthService.register_user(email, password)
+        
+    result, status_code = AuthService.register_user(email, password, fullname, phone)
     return jsonify(result), status_code
+
 
 
 @bp.route('/login', methods=['POST'])
