@@ -7,7 +7,7 @@ class ChatSession(db.Model):
     __tablename__ = 'chat_sessions'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     title = db.Column(db.String(200))
     
     started_at = db.Column(db.DateTime, default=datetime.utcnow)

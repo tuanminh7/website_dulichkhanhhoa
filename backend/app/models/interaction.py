@@ -7,7 +7,7 @@ class Review(db.Model):
     __tablename__ = 'reviews'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
     comment = db.Column(db.Text)
@@ -32,7 +32,7 @@ class Favorite(db.Model):
     __tablename__ = 'favorites'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -50,7 +50,7 @@ class SavedItinerary(db.Model):
     __tablename__ = 'saved_itineraries'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     total_budget = db.Column(db.Float)
     nodes = db.Column(db.JSON)  # List of location IDs and order
