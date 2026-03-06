@@ -1,10 +1,12 @@
+import math
 import re, json
 
 from flask import current_app, session
 from flask_login import login_user, logout_user
 from app.models.user import User
-from app import db
+from app import db, cache
 from flask_jwt_extended import (create_access_token, create_refresh_token)
+from datetime import datetime
 
 
 def validate_email(email) -> bool:
@@ -52,7 +54,7 @@ class AuthService:
             return {'error': str(e)}, 500
 
     @staticmethod
-    def login_user_by_email(email, password, remember=False):
+    def login_user_by_email(email, password):
         try:
             if not email or not password:
                 return {'error': 'Vui lòng điền đầy đủ thông tin'}, 400
@@ -60,14 +62,11 @@ class AuthService:
             user = User.query.filter_by(email=email).first()
 
             if not user or not user.check_password(password):
-                return {'error': 'Tên đăng nhập hoặc mật khẩu không đúng'}, 401
+                return {'error': 'Emalil hoặc mật khẩu không đúng'}, 401
 
-            # Login
-            login_user(user, remember=remember)
-            # session['user_id'] = user.id
-
-            a_token = create_access_token(identity=email)
-            r_token = create_refresh_token(identity=email)
+            # login_user(user)
+            a_token = create_access_token(identity=user.id)
+            r_token = create_refresh_token(identity=user.id)
 
             return {
                 'message': 'Đăng nhập thành công',
@@ -81,12 +80,14 @@ class AuthService:
 
 
     @staticmethod
-    def logout_user():
-        try:
-            logout_user()
-            return {'message': 'Đăng xuất thành công'}, 200
-        except Exception as e:
-            return {'error': str(e)}, 500
+    def logout_user(token_data: dict):
+        jti = token_data['jti']
+        expires_at = token_data['exp']
+        now = datetime.now().timestamp()
+        time_left = math.ceil(expires_at - now)
+        if time_left > 0:
+            cache.set(jti, 1, ex=time_left)
+        return {'message': 'Đăng xuất thành công'}, 200
 
 
     @staticmethod
@@ -129,7 +130,6 @@ class AuthService:
             db.session.rollback()
             return {'error': str(e)}, 500
 
-        
 
 
 def get_auth_service():

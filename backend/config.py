@@ -34,13 +34,22 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
 
+
     # Authentication
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=4)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
-    
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=3)
+    JWT_COOKIE_CSRF_PROTECT=False
+    JWT_TOKEN_LOCATION = ["headers", "cookies", "json", "query_string"]
+    JWT_ACCESS_COOKIE_NAME = "access_token_cookie"
+    JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
+
+
     # Admin
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@tourism.com')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@123456')
+
+    # Redis
+    REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
     
     # Pagination
     ITEMS_PER_PAGE = 10

@@ -4,13 +4,22 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-from flask_session import Session
+from flask_jwt_extended import JWTManager
 from config import config
+from redis import Redis
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
-# session = Session()
+jwt = JWTManager()
+cache = Redis(
+    host="localhost",
+    port=6379,
+    decode_responses=True,
+    db=0,
+    password=os.environ.get('REDIS_PASSWORD', '')
+)
 
 def create_app(config_name=None):
     if config_name is None:
@@ -23,7 +32,8 @@ def create_app(config_name=None):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
-    # session.init_app(app)
+    jwt.init_app(app)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
     from app.routes import main, auth, places, ai, maps, admin, user
 
@@ -34,14 +44,26 @@ def create_app(config_name=None):
     app.register_blueprint(maps.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(user.bp)
+
+    # @jwt.token_in_blocklist_loader
+    # def check_if_token_is_revoked(jwt_header, jwt_payload):
+    #     jti = jwt_payload["jti"]
+    #     try:
+    #         token_in_redis = cache.get(jti)
+    #         return token_in_redis is not None
+    #     except Exception:
+    #         return False
+
+    
     
     with app.app_context():
         db.create_all()
         from app.models.user import User
         admin = User.query.filter_by(email=app.config['ADMIN_EMAIL']).first()
         # if not admin:
-        #     admin = User(username='admin', email=app.config['ADMIN_EMAIL'], is_admin=True)
+        #     admin = User(email=app.config['ADMIN_EMAIL'])
         #     admin.set_password(app.config['ADMIN_PASSWORD'])
+        #     admin.role = 'ADMIN'
         #     db.session.add(admin)
         #     db.session.commit()
     
