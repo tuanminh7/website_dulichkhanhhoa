@@ -34,6 +34,7 @@ def register():
 
 @bp.route('/login', methods=['POST'])
 def login():
+    print(request.cookies)
     data = request.get_json()
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')

@@ -26,6 +26,8 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
     
     app = Flask(__name__)
+    # from flask_cors import CORS
+    # CORS(app, supports_credentials=True)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     

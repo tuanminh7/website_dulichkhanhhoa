@@ -36,10 +36,10 @@ class Config:
 
 
     # Authentication
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=30) # timedelta(seconds=10) 
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=3)
     JWT_COOKIE_CSRF_PROTECT=False
-    JWT_TOKEN_LOCATION = ["headers", "cookies", "json", "query_string"]
+    JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_ACCESS_COOKIE_NAME = "access_token_cookie"
     JWT_REFRESH_COOKIE_NAME = "refresh_token_cookie"
 
