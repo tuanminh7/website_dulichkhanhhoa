@@ -147,8 +147,9 @@ const Chatbot: React.FC = () => {
                     <AnimatePresence>
                         {messages.length === 0 && (
                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: .8 }}
                                 className="max-w-lg mx-auto text-center py-20"
                             >
                                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">

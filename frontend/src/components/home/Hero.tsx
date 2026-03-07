@@ -16,20 +16,20 @@ const Hero: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-start pt-32">
+            <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-start pt-44">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
+                    transition={{ duration: .8 }}
                     className="max-w-4xl"
                 >
-                    <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-widest mb-10 backdrop-blur-md border border-blue-500/20">
+                    {/* <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-widest mb-10 backdrop-blur-md border border-blue-500/20">
                         <Compass className="w-4 h-4 mr-2" />
                         Khám phá xứ Trầm Hương
-                    </span>
+                    </span> */}
 
 
-                    <h1 className="text-6xl md:text-8xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
+                    <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
                         Vẻ đẹp
                         <br />
                         <span className="text-emerald-400">Tuyệt diệu</span>

@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
                                 <NavLink
                                     to="/admin"
                                     className={({ isActive }) =>
-                                        `px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${isActive
+                                        `px-4 py-2 rounded-xl text-sm font-bold transition-agll flex items-center ${isActive
                                             ? 'text-purple-700 bg-purple-50'
                                             : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
                                         }`
