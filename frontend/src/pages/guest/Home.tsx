@@ -163,8 +163,8 @@ const Home: React.FC = () => {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[
-                        { name: 'Vịnh Nha Trang', img: 'https://images.unsplash.com/photo-1544918877-460635b64a36?q=80&w=2070&auto=format&fit=crop', tag: 'Thiên nhiên' },
-                        { name: 'Tháp Bà Ponagar', img: 'https://images.unsplash.com/photo-1621250320497-2ba452cc9f8d?q=80&w=2072&auto=format&fit=crop', tag: 'Văn hóa' },
+                        { name: 'Vịnh Nha Trang', img: 'https://www.homepaylater.vn/static/0c3d0bb8aa58929e1e20fd793cdbca2d/89314/1_vinh_nha_phu_noi_tieng_voi_ve_dep_hoang_so_va_da_dang_ve_dia_hinh_va_he_sinh_thai_6d258e3402.webp', tag: 'Thiên nhiên' },
+                        { name: 'Tháp Bà Ponagar', img: 'https://ik.imagekit.io/tvlk/blog/2023/09/thap-ba-ponagar-17.jpg?tr=q-70,c-at_max,w-1000,h-600', tag: 'Văn hóa' },
                         { name: 'VinWonders', img: 'https://images.unsplash.com/photo-1582650625119-3a31f8fa2699?q=80&w=2000&auto=format&fit=crop', tag: 'Giải trí' },
                         { name: 'Đảo Hòn Mun', img: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2070&auto=format&fit=crop', tag: 'Lặn biển' },
                     ].map((item, i) => (
