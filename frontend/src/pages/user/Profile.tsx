@@ -26,17 +26,8 @@ const Profile: React.FC = () => {
         }
     };
 
-    if (!user) {
-        return (
-            <div className="pt-32 pb-20 text-center">
-                <h2 className="text-2xl font-bold text-gray-900">Vui lòng đăng nhập</h2>
-                <p className="text-gray-500 mt-2">Bạn cần đăng nhập để xem thông tin cá nhân.</p>
-                <button className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/30">
-                    Đăng nhập ngay
-                </button>
-            </div>
-        );
-    }
+    // ProtectedRoute handles redirection, but we still need a null check for TypeScript
+    if (!user) return null;
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">

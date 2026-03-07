@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import ScrollToTop from './components/layout/ScrollToTop';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import LoadingOverlay from './components/common/LoadingOverlay';
 import Home from './pages/guest/Home';
 import Locations from './pages/guest/Locations';
 import LocationDetail from './pages/guest/LocationDetail';
@@ -22,11 +24,12 @@ function App() {
   return (
     <>
       <ScrollToTop />
+      <LoadingOverlay />
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="itineraries" element={<Itineraries />} />
+          <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="itineraries" element={<ProtectedRoute><Itineraries /></ProtectedRoute>} />
           {/* Guest routes */}
           <Route path="locations" element={<Locations />} />
           <Route path="locations/:id" element={<LocationDetail />} />
@@ -41,7 +44,7 @@ function App() {
         </Route>
 
         {/* Admin routes */}
-        <Route path="/admin" element={<MainLayout />}>
+        <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><MainLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="locations" element={<ManageLocations />} />
           <Route path="users" element={<ManageUsers />} />

@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, logout, isAdmin } = useAuth();
+    const { user, logout, isAdmin, loading } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -72,7 +72,9 @@ const Navbar: React.FC = () => {
                     </div>
 
                     <div className="hidden md:flex items-center space-x-3">
-                        {user ? (
+                        {loading ? (
+                            <div className="h-10 w-32 bg-gray-100 animate-pulse rounded-full" />
+                        ) : user ? (
                             <div className="flex items-center space-x-3">
                                 <Link to="/profile" className="flex items-center gap-2 p-1.5 pr-4 bg-gray-50 rounded-full hover:bg-gray-100 transition-all border border-gray-100">
                                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
@@ -96,7 +98,6 @@ const Navbar: React.FC = () => {
                                 <LogIn className="w-4 h-4 mr-2" />
                                 Đăng nhập
                             </Link>
-
                         )}
                     </div>
 
@@ -152,8 +153,10 @@ const Navbar: React.FC = () => {
                                     Quản trị hệ thống
                                 </NavLink>
                             )}
-                            <div className="pt-4 mt-2 border-t border-gray-50">
-                                {user ? (
+                            <div className="pt-4 mt-2 border-t border-gray-100">
+                                {loading ? (
+                                    <div className="h-14 w-full bg-gray-50 animate-pulse rounded-2xl" />
+                                ) : user ? (
                                     <div className="space-y-2">
                                         <Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center p-4 bg-gray-50 rounded-2xl">
                                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4 font-bold">

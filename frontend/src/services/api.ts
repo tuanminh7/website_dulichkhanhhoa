@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { triggerLoading } from '../context/LoadingContext';
 import type {
     Location,
     Category,
@@ -16,11 +17,34 @@ const API_BASE_URL = '/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-
     headers: {
         'Content-Type': 'application/json',
     },
 });
+
+// Request interceptor to show loading
+api.interceptors.request.use(
+    (config) => {
+        triggerLoading(true);
+        return config;
+    },
+    (error) => {
+        triggerLoading(false);
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor to hide loading
+api.interceptors.response.use(
+    (response) => {
+        triggerLoading(false);
+        return response;
+    },
+    (error) => {
+        triggerLoading(false);
+        return Promise.reject(error);
+    }
+);
 
 // Request interceptor for adding auth token
 // api.interceptors.request.use(
