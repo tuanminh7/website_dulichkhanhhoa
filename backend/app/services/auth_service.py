@@ -77,6 +77,7 @@ class AuthService:
             }, 200
 
         except Exception as e:
+            print(e)
             return {'error': str(e)}, 500
 
 

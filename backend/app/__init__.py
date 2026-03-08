@@ -26,8 +26,8 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
     
     app = Flask(__name__)
-    # from flask_cors import CORS
-    # CORS(app, supports_credentials=True)
+    from flask_cors import CORS
+    CORS(app, supports_credentials=True)
     app.config.from_object(config[config_name])
     config[config_name].init_app(app)
     
@@ -35,7 +35,7 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    # app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
     from app.routes import main, auth, places, ai, maps, admin, user
 

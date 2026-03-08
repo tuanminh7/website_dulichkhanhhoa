@@ -38,7 +38,7 @@ def login():
     data = request.get_json()
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
-    
+    print(email, password)
     result, status_code = AuthService.login_user_by_email(email, password)    
 
     print(result)
