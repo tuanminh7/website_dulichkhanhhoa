@@ -44,7 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(res.data.user);
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await authService.logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         localStorage.removeItem('token');
         setUser(null);
         navigate('/');

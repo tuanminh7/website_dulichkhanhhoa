@@ -30,7 +30,7 @@ class ChatMessage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False)
-    sender_type = db.Column(db.Enum('USER', 'MODEL', name='sender_types'), nullable=False)
+    sender_type = db.Column(db.Enum('USER', 'AI', name='sender_types'), nullable=False)
     message_content = db.Column(db.Text, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -39,7 +39,7 @@ class ChatMessage(db.Model):
         return {
             'id': self.id,
             'session_id': self.session_id,
-            'sender_type': self.sender_type,
+            'sender_type': str(self.sender_type.value) if hasattr(self.sender_type, 'value') else str(self.sender_type),
             'message_content': self.message_content,
             'created_at': self.created_at.isoformat()
         }

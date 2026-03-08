@@ -1,6 +1,6 @@
 from app.services.auth_service import AuthService
 from flask import Blueprint, request, jsonify, make_response, current_app
-from flask_jwt_extended import jwt_required, current_user, get_jwt, create_access_token, get_jwt_identity
+from flask_jwt_extended import jwt_required, current_user, get_jwt, create_access_token, get_jwt_identity, unset_jwt_cookies
 from app.models.user import User
 from app import jwt, cache
 
@@ -71,10 +71,8 @@ def logout():
     token_data = get_jwt()
     result, status_code = AuthService.logout_user(token_data)
     resp = make_response(jsonify(result), status_code)
-
-    resp.set_cookie("access_token", "", httponly=True, expires=0)
-    resp.set_cookie("refresh_token", "", httponly=True, expires=0)
-    return resp, 200
+    unset_jwt_cookies(resp)
+    return resp
 
 
 @bp.route('/me', methods=['GET'])

@@ -45,16 +45,16 @@ api.interceptors.response.use(
 );
 
 // Request interceptor for adding auth token
-// api.interceptors.request.use(
-//     (config) => {
-//         const token = localStorage.getItem('token');
-//         if (token) {
-//             config.headers.Authorization = `Bearer ${token}`;
-//         }
-//         return config;
-//     },
-//     (error) => Promise.reject(error)
-// );
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
 // API services
 export const locationService = {
@@ -83,6 +83,7 @@ export const authService = {
     register: (data: any) => api.post('/auth/register', data),
     getMe: () => api.get<User>('/auth/me'),
     forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+    logout: () => api.post('/auth/logout'),
 };
 
 export const chatService = {

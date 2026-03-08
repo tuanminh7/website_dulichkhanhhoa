@@ -46,17 +46,6 @@ def create_app(config_name=None):
     app.register_blueprint(maps.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(user.bp)
-
-    # @jwt.token_in_blocklist_loader
-    # def check_if_token_is_revoked(jwt_header, jwt_payload):
-    #     jti = jwt_payload["jti"]
-    #     try:
-    #         token_in_redis = cache.get(jti)
-    #         return token_in_redis is not None
-    #     except Exception:
-    #         return False
-
-    
     
     with app.app_context():
         db.create_all()

@@ -1,18 +1,16 @@
 import json, uuid, os
-import pathlib
+import pathlib, hashlib
 
 from flask import Blueprint, request, jsonify, session, Response, stream_with_context, send_file, current_app
-from flask_login import current_user, login_required
+from flask_jwt_extended import jwt_required, current_user
 from app.services.ai_service import get_ai_service
 from app.services.itinerary_service import get_itinerary_service
 from app.models.ai import ChatSession
 from app.models.location import Location
-from app import db
-from datetime import datetime
+from app import db, cache
 
 
 bp = Blueprint('ai', __name__, url_prefix='/api/ai')
-
 
 @bp.route('/img/<slug>', methods=['GET'])
 def serve_image(slug):
@@ -34,6 +32,7 @@ def serve_image(slug):
 
 
 @bp.route('/chat', methods=['POST'])
+@jwt_required(optional=True)
 def chat():
     """Chat với AI (Streaming)"""
     try:
@@ -44,23 +43,50 @@ def chat():
         if not message:
             return jsonify({'error': 'Tin nhắn không được để trống'}), 400
         
-        # Get or create session
+        # 1. Rate Limiting & Guest Limit
+        user_id = current_user.id if hasattr(current_user, 'id') else request.remote_addr
+        
+        # Guest Limit (3 messages)
+        if not hasattr(current_user, 'id'):
+            guest_limit_key = f"guest_chat_limit:{user_id}"
+            guest_count = cache.get(guest_limit_key)
+            if guest_count and int(guest_count) >= 3:
+                return jsonify({
+                    'error': 'GUEST_LIMIT_REACHED',
+                    'message': 'Bạn đã hết lượt chat thử. Vui lòng đăng nhập để lưu lịch sử và tiếp tục trò chuyện!'
+                }), 403
+            
+        rate_limit_key = f"rate_limit:{user_id}"
+        count = cache.incr(rate_limit_key)
+        if count == 1:
+            cache.expire(rate_limit_key, 60)
+        if count > 5:
+            return jsonify({'error': 'Bạn đang chat quá nhanh. Vui lòng đợi 1 phút.'}), 429
+
+        # 2. Response Caching
+        cache_key = f"ai_cache:{hashlib.md5(message.lower().encode()).hexdigest()}"
+        cached_response = cache.get(cache_key)
+        
         from app.models.ai import ChatSession, ChatMessage
         
         # Get chat history
-        chat_session = ChatSession.query.filter_by(id=session_id).first()
-        chat_history = []
-        
-        if chat_session:
-            if chat_session.messages:
-                chat_history = json.loads(chat_session.messages)
-        else:
-            chat_session = None
+        chat_session = None
+        if session_id:
+            chat_session = ChatSession.query.get(session_id)
+            if chat_session:
+                # Permission check: if session has an owner, must match current_user
+                if chat_session.user_id:
+                    if not current_user or not hasattr(current_user, 'id') or current_user.id != chat_session.user_id:
+                        return jsonify({'error': 'Không có quyền truy cập đoạn chat này'}), 403
+                # If guest session, and user is logged in, they shouldn't be using a guest session for history
+                elif current_user and hasattr(current_user, 'id'):
+                    # Optional: We could "claim" this session for the user here, 
+                    # but for now let's just create a new one for safety.
+                    chat_session = None
 
         if not chat_session:
             chat_session = ChatSession(
-                id=session_id,
-                user_id=current_user.id if current_user.is_authenticated else None,
+                user_id=current_user.id if hasattr(current_user, 'id') else None,
                 title=message[:100]
             )
             db.session.add(chat_session)
@@ -75,10 +101,8 @@ def chat():
                 'content': h.message_content
             })
         
-        
-        # Build context
         context = {}
-        if current_user.is_authenticated and current_user.preferences:
+        if hasattr(current_user, 'id') and current_user.preferences:
             try:
                 context['user_preferences'] = json.loads(current_user.preferences)
             except: pass
@@ -89,10 +113,18 @@ def chat():
             full_response = ""
             # Yield session info first
             yield f"data: {json.dumps({'session_id': chat_session.id})}\n\n"
-            
-            for chunk in ai_service.chat_stream(message, context=context, chat_history=chat_history):
-                full_response += chunk
-                yield f"data: {json.dumps({'text': chunk})}\n\n"
+
+            if cached_response:
+                yield f"data: {json.dumps({'text': cached_response})}\n\n"
+                full_response = cached_response
+            else:
+                for chunk in ai_service.chat_stream(message, context=context, chat_history=chat_history):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'text': chunk})}\n\n"
+                
+                # Cache the new response for 1 hour
+                if full_response:
+                    cache.set(cache_key, full_response, ex=3600)
             
             # Save messages when done
             try:
@@ -109,6 +141,14 @@ def chat():
                 db.session.add(user_msg)
                 db.session.add(ai_msg)
                 db.session.commit()
+                
+                # Increment guest count after successful message save
+                if not hasattr(current_user, 'id'):
+                    guest_limit_key = f"guest_chat_limit:{request.remote_addr}"
+                    cache.incr(guest_limit_key)
+                    # Keep guest limit records for 1 day
+                    cache.expire(guest_limit_key, 86400)
+                
                 # Final signal
                 yield f"data: {json.dumps({'done': True, 'ai_message': ai_msg.to_dict()})}\n\n"
             except Exception as e:
@@ -117,8 +157,6 @@ def chat():
         resp = Response(stream_with_context(generate()), mimetype='text/event-stream')
         resp.headers['Cache-Control'] = 'no-cache'
         resp.headers['X-Accel-Buffering'] = 'no'
-        resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173'
-        resp.headers['Access-Control-Allow-Credentials'] = 'true'
         return resp
         
     except Exception as e:
@@ -232,6 +270,7 @@ def estimate_cost():
 
 
 @bp.route('/sessions', methods=['POST'])
+@jwt_required(optional=True)
 def create_session():
     """Tạo cuộc hội thoại mới"""
     try:
@@ -240,7 +279,7 @@ def create_session():
         
         from app.models.ai import ChatSession
         chat_session = ChatSession(
-            user_id=current_user.id if current_user.is_authenticated else None,
+            user_id=current_user.id if hasattr(current_user, 'id') else None,
             title=title
         )
         db.session.add(chat_session)
@@ -253,17 +292,15 @@ def create_session():
 
 
 @bp.route('/sessions', methods=['GET'])
+@jwt_required()
 def get_chat_sessions():
     """Lấy danh sách chat sessions"""
     try:
-        if current_user.is_authenticated:
+        if current_user:
             sessions = ChatSession.query.filter_by(
                 user_id=current_user.id
             ).order_by(ChatSession.started_at.desc()).limit(20).all()
         else:
-            # For guests, we could return sessions from current flask session if tracked,
-            # but for now let's just return empty or recent public ones if any. 
-            # Usually guests don't have a history unless stored in localstorage.
             sessions = []
         
         return jsonify([session.to_dict() for session in sessions])
@@ -273,10 +310,24 @@ def get_chat_sessions():
 
 
 @bp.route('/sessions/<int:session_id>/messages', methods=['GET'])
+@jwt_required(optional=True)
 def get_chat_session_messages(session_id):
     """Lấy danh sách tin nhắn của session"""
     try:
-        from app.models.ai import ChatMessage
+        from app.models.ai import ChatMessage, ChatSession
+        chat_session = ChatSession.query.get_or_404(session_id)
+        
+        # Strict permission check
+        if chat_session.user_id:
+            # Session belongs to a user, check if it's the current user
+            if not current_user or not hasattr(current_user, 'id') or current_user.id != chat_session.user_id:
+                return jsonify({'error': 'Không có quyền truy cập'}), 403
+        else:
+            # Guest session: If a user is logged in, they shouldn't really be looking at guest sessions
+            # But more importantly, we should prevent logged-in users from "snooping" guest sessions if they aren't meant to.
+            # However, for now, we allow access to guest sessions if they aren't claimed.
+            pass
+                
         messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at.asc()).all()
         return jsonify([m.to_dict() for m in messages])
     except Exception as e:
@@ -284,13 +335,14 @@ def get_chat_session_messages(session_id):
 
 
 @bp.route('/chat-sessions/<session_id>', methods=['GET'])
+@jwt_required()
 def get_chat_session(session_id):
     """Lấy chi tiết chat session"""
     try:
         chat_session = ChatSession.query.filter_by(session_id=session_id).first_or_404()
         
         # Check permission
-        if chat_session.user_id and (not current_user.is_authenticated or 
+        if chat_session.user_id and (not current_user or 
                                      current_user.id != chat_session.user_id):
             return jsonify({'error': 'Không có quyền truy cập'}), 403
         
@@ -301,9 +353,10 @@ def get_chat_session(session_id):
 
 
 @bp.route('/chat-sessions/<session_id>', methods=['DELETE'])
+@jwt_required()
 def delete_chat_session(session_id):
     """Xóa chat session"""
-    if not current_user.is_authenticated:
+    if not current_user:
         return jsonify({'error': 'Vui lòng đăng nhập'}), 401
     
     try:

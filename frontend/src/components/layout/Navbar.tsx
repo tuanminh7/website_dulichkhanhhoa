@@ -6,12 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
-<<<<<<< HEAD
     const { user, logout, isAdmin, loading } = useAuth();
-    const navigate = useNavigate();
-=======
-    const { user, logout, isAdmin } = useAuth();
->>>>>>> Tuan
 
     const handleLogout = () => {
         logout();
@@ -66,7 +61,7 @@ const Navbar: React.FC = () => {
                                         }`
                                     }
                                 >
-                                    <LayoutDashboard className="w-4 h-4 mr-1" />
+                                    {/* <LayoutDashboard className="w-4 h-4 mr-1" /> */}
                                     Admin
                                 </NavLink>
                             )}

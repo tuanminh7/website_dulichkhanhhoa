@@ -1,28 +1,14 @@
-<<<<<<< HEAD
-# import google.generativeai as genai
-import json
-
-from google import genai
-from flask import current_app
-=======
 import google.generativeai as genai
 from flask import current_app
 import json, os, urllib.parse
 from typing import List, Dict, Optional
->>>>>>> Tuan
 
 
 class GeminiAIService:
     
     def __init__(self):
-<<<<<<< HEAD
-        self._model_name = current_app.config.get('GEMINI_MODEL', 'gemini-3-flash-preview')
-        self._client = genai.Client(api_key=current_app.config.get('GEMINI_API_KEY'))
-        self._chat = None
-=======
         self.model = None
         self.knowledge_base = ""
->>>>>>> Tuan
         self._configure()
         self._load_knowledge_base()
     
@@ -46,23 +32,12 @@ class GeminiAIService:
     def _configure(self):
         """Configure Gemini API"""
         try:
-            if not self._client.api:
+            api_key = current_app.config.get('GEMINI_API_KEY')
+            if not api_key:
                 raise ValueError("GEMINI_API_KEY not configured")
-<<<<<<< HEAD
-
-            self._chat = self._client.chats.create(
-                history=[],
-                model=self._model_name,
-                config=genai.types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=2048,
-                    top_p= 0.95,
-                    top_k=40,
-                    system_instruction=self._build_tourism_system_prompt)
-=======
             
             genai.configure(api_key=api_key)
-            self.model_name = current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash')
+            self.model_name = current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
             
             generation_config = {
                 "temperature": current_app.config.get('AI_TEMPERATURE', 0.7),
@@ -88,7 +63,6 @@ class GeminiAIService:
                 generation_config=generation_config,
                 system_instruction=self._get_system_instruction(),
                 safety_settings=safety_settings
->>>>>>> Tuan
             )
             
             # self.model = genai.GenerativeModel(
@@ -101,66 +75,6 @@ class GeminiAIService:
             current_app.logger.error(f"Error configuring Gemini: {str(e)}")
             raise
     
-<<<<<<< HEAD
-
-    def chat(self, message: str, context: dict = None, chat_history: list[dict] = None) -> dict:
-        try:
-            # Build prompt with context
-            system_prompt = self._build_tourism_system_prompt()
-
-            
-            if chat_history is not None:
-                self._chat = self._client.chats.create(
-                    history=[],
-                    model=self._model_name,
-                    config=genai.types.GenerateContentConfig(
-                        temperature=0.7,
-                        max_output_tokens=2048,
-                        top_p= 0.95,
-                        top_k=40,
-                        system_instruction=self._build_tourism_system_prompt)
-                )
-
-                response = self._chat.send_message(message=message)
-
-                model_content = response.text
-                
-
-            # Session mới
-            else:
-                self._chat.send_message("message")
-            
-            if context:
-                system_prompt += f"\n\n**Thông tin bổ sung:**\n{json.dumps(context, ensure_ascii=False, indent=2)}"
-            
-            # Start chat session
-            # chat = self.model.start_chat(history=[])
-            # chat = self.model.generate_content(
-            #     model="gemini-3-flash-preview",
-            #     config=genai.types.GenerateContentConfig(
-            #         system_instruction="You are a cat. Your name is Neko."),
-            #     contents="Hello there"
-            # )
-            chat = self.model.start_chat(history=[])
-            # self.client.chats.
-
-            # Add chat history if available
-            if chat_history:
-                for msg in chat_history[-10:]:  # Last 10 messages
-                    if msg.get('role') == 'user':
-                        chat.send_message(msg.get('content', ''))
-            
-            # Send current message with system prompt
-            full_message = f"{system_prompt}\n\n**Câu hỏi của khách:** {message}"
-            print(full_message)
-            response = chat.send_message(full_message)
-            print(response.text)
-            
-            return {
-                'success': True,
-                'response': response.text,
-                'model': 'gemini-3-flash-preview',
-=======
     def chat(self, message: str, context: Optional[Dict] = None, 
              chat_history: Optional[List[Dict]] = None) -> Dict:
         """Chat with Gemini AI"""
@@ -170,7 +84,6 @@ class GeminiAIService:
                 'success': True,
                 'response': response_text,
                 'model': self.model_name,
->>>>>>> Tuan
                 'finish_reason': 'stop'
             }
         except Exception as e:
@@ -181,9 +94,6 @@ class GeminiAIService:
                 'response': 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.'
             }
     
-<<<<<<< HEAD
-    def generate_itinerary(self, preferences: dict) -> dict:
-=======
     def _get_system_instruction(self, context: Optional[Dict] = None) -> str:
         """Build system instruction (separate from chat content)"""
         system = self._build_tourism_system_prompt()
@@ -251,7 +161,6 @@ class GeminiAIService:
         Returns:
             Dict with itinerary data
         """
->>>>>>> Tuan
         try:
             prompt = self._build_itinerary_prompt(preferences)
             
@@ -298,11 +207,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'suggestions': suggestions,
-<<<<<<< HEAD
-                'model': 'gemini-3-flash-preview'
-=======
                 'model': self.model_name
->>>>>>> Tuan
             }
             
         except Exception as e:
@@ -331,11 +236,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'cost': cost_data,
-<<<<<<< HEAD
-                'model': 'gemini-3-flash-preview'
-=======
                 'model': self.model_name
->>>>>>> Tuan
             }
             
         except Exception as e:
@@ -363,9 +264,6 @@ class GeminiAIService:
 
     def _build_tourism_system_prompt(self) -> str:
         """Build system prompt for tourism assistant"""
-<<<<<<< HEAD
-        return """Bạn là trợ lý du lịch thông minh chuyên về du lịch địa phương Việt Nam. Thiện về Khánh Hoà. 
-=======
         # Get list of existing images with short slug IDs
         image_list_str = ""
         try:
@@ -389,7 +287,6 @@ class GeminiAIService:
 - TUYỆT ĐỐI KHÔNG sử dụng dấu sao (** hoặc __) để bôi đậm văn bản.
 - Chỉ sử dụng văn bản thuần túy, xuống dòng và dấu gạch đầu dòng (-) để trình bày.
 - NGOẠI LỆ DUY NHẤT: Chỉ sử dụng Markdown cho hình ảnh theo đúng danh sách ID bên dưới.
->>>>>>> Tuan
 
 **Vai trò của bạn:**
 - Tư vấn lịch trình du lịch chi tiết và phù hợp

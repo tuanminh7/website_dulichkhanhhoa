@@ -81,6 +81,7 @@ class AuthService:
                 'message': 'Đăng nhập thành công',
                 "access_token": a_token, 
                 "refresh_token": r_token,
+                "token": a_token,
                 'user': user.to_dict()
             }, 200
 
