@@ -47,7 +47,6 @@ def chat():
         # Get or create session
         from app.models.ai import ChatSession, ChatMessage
         
-<<<<<<< HEAD
         # Get chat history
         chat_session = ChatSession.query.filter_by(id=session_id).first()
         chat_history = []
@@ -55,19 +54,12 @@ def chat():
         if chat_session:
             if chat_session.messages:
                 chat_history = json.loads(chat_session.messages)
-=======
-        if session_id:
-            chat_session = ChatSession.query.get(session_id)
->>>>>>> Tuan
         else:
             chat_session = None
 
         if not chat_session:
             chat_session = ChatSession(
-<<<<<<< HEAD
                 id=session_id,
-=======
->>>>>>> Tuan
                 user_id=current_user.id if current_user.is_authenticated else None,
                 title=message[:100]
             )
@@ -83,11 +75,8 @@ def chat():
                 'content': h.message_content
             })
         
-<<<<<<< HEAD
         
         # Build context
-=======
->>>>>>> Tuan
         context = {}
         if current_user.is_authenticated and current_user.preferences:
             try:
