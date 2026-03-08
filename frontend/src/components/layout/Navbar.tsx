@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { LogIn, LogOut, Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
