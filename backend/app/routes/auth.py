@@ -36,17 +36,18 @@ def register():
 def login():
     # print(request.cookies)
     data = request.get_json()
-    fullname = data.get('fullname', '')
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     
     result, status_code = AuthService.login_user_by_email(email, password)    
 
+    print(result)
+
     response = make_response(jsonify(result), status_code)
 
     response.set_cookie(
         "access_token_cookie",       
-        result['access_token'],         
+        result.get('access_token'),         
         httponly=True,         
         # secure=True,           
         samesite='Strict',     
@@ -55,9 +56,9 @@ def login():
 
     response.set_cookie(
         "refresh_token_cookie",       
-        result['refresh_token'],         
-        httponly=True,         
-        # secure=True,           
+        result.get('refresh_token'),         
+        httponly=True,
+        # secure=True,
         samesite='Strict',     
         max_age=current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', 259200)
     )

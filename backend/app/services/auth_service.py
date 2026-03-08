@@ -68,15 +68,6 @@ class AuthService:
             a_token = create_access_token(identity=user.id)
             r_token = create_refresh_token(identity=user.id)
 
-            # Generate JWT token so frontend can use bearer auth if necessary
-            from datetime import datetime, timedelta
-            import jwt
-            payload = {
-                'user_id': user.id,
-                'exp': datetime.utcnow() + timedelta(hours=24)
-            }
-            token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
-
             return {
                 'message': 'Đăng nhập thành công',
                 "access_token": a_token, 
