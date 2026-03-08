@@ -1,6 +1,6 @@
-import React from 'react';
-import { Search, MapPin, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { MapPin, Search } from 'lucide-react';
+import React from 'react';
 
 const Hero: React.FC = () => {
     return (

@@ -1,8 +1,8 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, Edit2, Loader2, Plus, Tag, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { categoryService } from '../../services/api';
 import type { Category } from '../../types';
-import { Plus, Edit2, Trash2, Tag, Loader2, X, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const ManageCategories: React.FC = () => {
     const [categories, setCategories] = useState<Category[]>([]);
