@@ -45,23 +45,24 @@ def login():
 
     response = make_response(jsonify(result), status_code)
 
-    response.set_cookie(
-        "access_token_cookie",       
-        result.get('access_token'),         
-        httponly=True,         
-        # secure=True,           
-        samesite='Strict',     
-        max_age=current_app.config.get('JWT_ACCESS_TOKEN_EXPIRES', 900)
-    )
+    if status_code == 200:
+        response.set_cookie(
+            "access_token_cookie",       
+            result.get('access_token'),         
+            httponly=True,         
+            # secure=True,           
+            samesite='Strict',     
+            max_age=current_app.config.get('JWT_ACCESS_TOKEN_EXPIRES', 900)
+        )
 
-    response.set_cookie(
-        "refresh_token_cookie",       
-        result.get('refresh_token'),         
-        httponly=True,
-        # secure=True,
-        samesite='Strict',     
-        max_age=current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', 259200)
-    )
+        response.set_cookie(
+            "refresh_token_cookie",       
+            result.get('refresh_token'),         
+            httponly=True,
+            # secure=True,
+            samesite='Strict',     
+            max_age=current_app.config.get('JWT_REFRESH_TOKEN_EXPIRES', 259200)
+        )
 
     return response
 
