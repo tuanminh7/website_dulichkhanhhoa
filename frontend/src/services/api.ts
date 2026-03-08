@@ -9,8 +9,6 @@ import type {
     User,
     Review,
     Favorite,
-    CostReference,
-    SystemStatistic
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -60,16 +58,19 @@ api.interceptors.response.use(
 
 // API services
 export const locationService = {
-    getAll: () => api.get<Location[]>('/locations'),
-    getById: (id: number) => api.get<Location>(`/locations/${id}`),
-    create: (data: Partial<Location>) => api.post<Location>('/locations', data),
-    update: (id: number, data: Partial<Location>) => api.put<Location>(`/locations/${id}`, data),
-    delete: (id: number) => api.delete(`/locations/${id}`),
+    getAll: () => api.get<Location[]>('/places'),
+    getById: (id: number) => api.get<Location>(`/places/${id}`),
+    create: (data: any) => api.post<Location>('/places', data),
+    update: (id: number, data: any) => api.put<Location>(`/places/${id}`, data),
+    delete: (id: number) => api.delete(`/places/${id}`),
 };
 
 export const categoryService = {
-    getAll: () => api.get<Category[]>('/categories'),
-    getById: (id: number) => api.get<Category>(`/categories/${id}`),
+    getAll: () => api.get<Category[]>('/places/categories'),
+    getById: (id: number) => api.get<Category>(`/places/categories/${id}`),
+    create: (data: Partial<Category>) => api.post<Category>('/places/categories', data),
+    update: (id: number, data: Partial<Category>) => api.put<Category>(`/places/categories/${id}`, data),
+    delete: (id: number) => api.delete(`/places/categories/${id}`),
 };
 
 export const dishService = {
@@ -85,10 +86,10 @@ export const authService = {
 };
 
 export const chatService = {
-    getSessions: () => api.get<ChatSession[]>('/chats'),
-    getSessionMessages: (sessionId: number) => api.get<ChatMessage[]>(`/chats/${sessionId}/messages`),
-    sendMessage: (sessionId: number, message: string) => api.post<ChatMessage>(`/chats/${sessionId}/messages`, { message }),
-    createSession: (title: string) => api.post<ChatSession>('/chats', { title }),
+    getSessions: () => api.get<ChatSession[]>('/ai/sessions'),
+    getSessionMessages: (sessionId: number) => api.get<ChatMessage[]>(`/ai/sessions/${sessionId}/messages`),
+    sendMessage: (sessionId: number, message: string) => api.post<{ response: string, session_id: number, ai_message: ChatMessage }>('/ai/chat', { session_id: sessionId, message }),
+    createSession: (title: string) => api.post<ChatSession>('/ai/sessions', { title }),
 };
 
 export const interactionService = {
@@ -99,9 +100,12 @@ export const interactionService = {
 };
 
 export const adminService = {
-    getStats: () => api.get<SystemStatistic[]>('/admin/stats'),
-    getUsers: () => api.get<User[]>('/admin/users'),
-    updateCost: (id: number, data: Partial<CostReference>) => api.put(`/admin/costs/${id}`, data),
+    getStats: () => api.get<any>('/admin/dashboard'),
+    getUsers: (params?: any) => api.get<any>('/admin/users', { params }),
+    toggleUserActive: (userId: string) => api.post(`/admin/users/${userId}/toggle-active`),
+    makeAdmin: (userId: string) => api.post(`/admin/users/${userId}/make-admin`),
+    getAnalytics: () => api.get<any>('/admin/analytics'),
+    // updateCost: (id: number, data: Partial<CostReference>) => api.put(`/admin/costs/${id}`, data),
 };
 
 export default api;

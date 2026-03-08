@@ -22,9 +22,16 @@ def validate_password(password) -> tuple[bool, str]:
 
 class AuthService:
     @staticmethod
+<<<<<<< HEAD
     def register_user(email, password, fullname, phone):
         try:
             if not email or not password:
+=======
+    def register_user(fullname, email, password):
+        try:
+            # Validation
+            if not fullname or not email or not password:
+>>>>>>> Tuan
                 return {'error': 'Vui lòng điền đầy đủ thông tin'}, 400
 
             if not validate_email(email):
@@ -38,7 +45,11 @@ class AuthService:
                 return {'error': 'Email đã được đăng ký'}, 400
 
             # Create user
+<<<<<<< HEAD
             user = User(email=email, fullname=fullname, phone=phone[1:])
+=======
+            user = User(fullname=fullname, email=email)
+>>>>>>> Tuan
             user.set_password(password)
 
             db.session.add(user)
@@ -64,15 +75,34 @@ class AuthService:
             if not user or not user.check_password(password):
                 return {'error': 'Emalil hoặc mật khẩu không đúng'}, 401
 
+<<<<<<< HEAD
             # login_user(user)
             a_token = create_access_token(identity=user.id)
             r_token = create_refresh_token(identity=user.id)
+=======
+            # Login via flask-login (session cookie)
+            login_user(user, remember=remember)
+>>>>>>> Tuan
+
+            # Generate JWT token so frontend can use bearer auth if necessary
+            from datetime import datetime, timedelta
+            import jwt
+            payload = {
+                'user_id': user.id,
+                'exp': datetime.utcnow() + timedelta(hours=24)
+            }
+            token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
             return {
                 'message': 'Đăng nhập thành công',
+<<<<<<< HEAD
                 "access_token": a_token, 
                 "refresh_token": r_token,
                 'user': user.to_dict()
+=======
+                'user': user.to_dict(),
+                'token': token
+>>>>>>> Tuan
             }, 200
 
         except Exception as e:

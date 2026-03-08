@@ -7,6 +7,7 @@ export interface User {
     phone?: string;
     avatar?: string;
     role: UserRole;
+    is_active: boolean;
     created_at: string;
 }
 
@@ -44,6 +45,8 @@ export interface Location {
     price_range_max?: number;
     rating_avg: number;
     status: 'ACTIVE' | 'INACTIVE';
+    latitude: number;
+    longitude: number;
     path?: any;
     map_url?: string;
     category?: Category;

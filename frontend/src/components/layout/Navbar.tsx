@@ -1,17 +1,20 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
+<<<<<<< HEAD
     const { user, logout, isAdmin, loading } = useAuth();
     const navigate = useNavigate();
+=======
+    const { user, logout, isAdmin } = useAuth();
+>>>>>>> Tuan
 
     const handleLogout = () => {
         logout();
-        navigate('/');
     };
 
     const navLinks = [
@@ -20,7 +23,6 @@ const Navbar: React.FC = () => {
         { name: 'Lưu trú', path: '/stay' },
         { name: 'Tư vấn AI', path: '/chatbot' },
     ];
-
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur-3xl border-b border-gray-100 shadow-sm">

@@ -36,15 +36,15 @@ def get_users():
     return jsonify(result), status_code
 
 
-@bp.route('/users/<int:user_id>/toggle-active', methods=['POST'])
+@bp.route('/users/<user_id>/toggle-active', methods=['POST'])
 @admin_required
 def toggle_user_active(user_id):
-    """Toggle user active status"""
+    ### loi tai day 
     result, status_code = admin_service.toggle_user_active(user_id, current_user)
     return jsonify(result), status_code
 
 
-@bp.route('/users/<int:user_id>/make-admin', methods=['POST'])
+@bp.route('/users/<user_id>/make-admin', methods=['POST'])
 @admin_required
 def make_admin(user_id):
     """Make user admin"""

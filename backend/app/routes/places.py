@@ -30,9 +30,8 @@ def get_place(place_id):
 @login_required
 def create_place():
     """Tạo địa điểm mới (Admin only)"""
-    # Check for admin role if needed
-    # if current_user.role != 'ADMIN':
-    #     return jsonify({'error': 'Không có quyền truy cập'}), 403
+    if current_user.role != 'ADMIN':
+        return jsonify({'error': 'Không có quyền truy cập'}), 403
         
     data = request.form.to_dict() if not request.is_json else request.get_json()
     files = request.files
@@ -82,4 +81,40 @@ def add_review(place_id):
 @bp.route('/categories', methods=['GET'])
 def get_categories():
     """Lấy danh sách categories"""
-    return jsonify({"message": "Chưa hỗ trợ"})
+    result, status_code = PlacesService.get_categories()
+    return jsonify(result), status_code
+
+
+@bp.route('/categories', methods=['POST'])
+@login_required
+def create_category():
+    """Tạo category mới (Admin only)"""
+    if current_user.role != 'ADMIN':
+        return jsonify({'error': 'Không có quyền truy cập'}), 403
+    
+    data = request.get_json()
+    result, status_code = PlacesService.create_category(data)
+    return jsonify(result), status_code
+
+
+@bp.route('/categories/<int:category_id>', methods=['PUT'])
+@login_required
+def update_category(category_id):
+    """Cập nhật category (Admin only)"""
+    if current_user.role != 'ADMIN':
+        return jsonify({'error': 'Không có quyền truy cập'}), 403
+    
+    data = request.get_json()
+    result, status_code = PlacesService.update_category(category_id, data)
+    return jsonify(result), status_code
+
+
+@bp.route('/categories/<int:category_id>', methods=['DELETE'])
+@login_required
+def delete_category(category_id):
+    """Xóa category (Admin only)"""
+    if current_user.role != 'ADMIN':
+        return jsonify({'error': 'Không có quyền truy cập'}), 403
+    
+    result, status_code = PlacesService.delete_category(category_id)
+    return jsonify(result), status_code

@@ -47,7 +47,7 @@ Quản lý cấu trúc dữ liệu và logic liên quan đến Database (SQLAlch
 ### 🛣️ Routes (`/app/routes/`)
 Nơi tiếp nhận và phản hồi yêu cầu từ Frontend:
 
-- **`auth.py`**: Xử lý Đăng ký, Đăng nhập (JWT), Đăng xuất.
+- **`auth.py`**: Xử lý Đăng ký, Đăng nhập (JWT) - khi đăng nhập trả về mã thông báo Bearer để frontend lưu trữ, Đăng xuất.
 - **`places.py`**: Tìm kiếm, lọc địa điểm theo danh mục, vị trí và xem chi tiết một địa điểm.
 - **`user.py`**: Quản lý Profile, xem danh sách yêu thích và lịch trình đã lưu của người dùng.
 - **`admin.py`**: Các Endpoint dành riêng cho quản trị viên: Quản lý người dùng, duyệt địa điểm, xem báo cáo thống kê.

@@ -88,10 +88,16 @@ class AdminService:
             if user.role == 'ADMIN':
                  return {'error': 'Không thể thay đổi trạng thái của admin'}, 400
             
-            # Assuming we might want to add an is_active field later. 
-            # For now, let's just return a placeholder or implement role based restriction.
-            return {'message': 'Tính năng đang được phát triển'}, 200
+            user.is_active = not user.is_active
+            db.session.commit()
+            
+            status = 'kích hoạt' if user.is_active else 'vô hiệu hóa'
+            return {
+                'message': f'Đã {status} người dùng thành công',
+                'user': user.to_dict()
+            }, 200
         except Exception as e:
+            db.session.rollback()
             return {'error': str(e)}, 500
 
     @staticmethod
@@ -123,10 +129,22 @@ class AdminService:
                     })
                 return growth
 
+            seven_days_ago = datetime.utcnow() - timedelta(days=7)
+            active_users = db.session.query(
+                User.id, User.fullname, User.email, func.max(ChatSession.updated_at).label('last_active')
+            ).join(ChatSession).filter(ChatSession.updated_at >= seven_days_ago).group_by(User.id).all()
+
             return {
                 'user_growth': get_growth_last_year(User),
                 'places_growth': get_growth_last_year(Location),
-                'active_users': [] # Placeholder for now
+                'active_users': [
+                    {
+                        'id': u.id,
+                        'fullname': u.fullname,
+                        'email': u.email,
+                        'last_active': u.last_active.isoformat()
+                    } for u in active_users
+                ]
             }, 200
         except Exception as e:
             return {'error': str(e)}, 500

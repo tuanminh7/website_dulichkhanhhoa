@@ -222,10 +222,74 @@ class PlacesService:
             return {'error': str(e)}, 500
 
     @staticmethod
-    def allowed_file(filename):
-        """Check if file extension is allowed"""
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif'])
+    def get_categories():
+        """Lấy danh sách categories"""
+        try:
+            categories = Category.query.all()
+            return [cat.to_dict() for cat in categories], 200
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def create_category(data):
+        """Tạo category mới"""
+        try:
+            name = data.get('name')
+            type = data.get('type')
+            if not name or not type:
+                return {'error': 'Thiếu thông tin name hoặc type'}, 400
+            
+            category = Category(
+                name=name,
+                type=type,
+                icon=data.get('icon')
+            )
+            db.session.add(category)
+            db.session.commit()
+            return {
+                'message': 'Tạo danh mục thành công',
+                'category': category.to_dict()
+            }, 201
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def update_category(category_id, data):
+        """Cập nhật category"""
+        try:
+            category = Category.query.get_or_404(category_id)
+            if 'name' in data:
+                category.name = data['name']
+            if 'type' in data:
+                category.type = data['type']
+            if 'icon' in data:
+                category.icon = data['icon']
+            
+            db.session.commit()
+            return {
+                'message': 'Cập nhật danh mục thành công',
+                'category': category.to_dict()
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def delete_category(category_id):
+        """Xóa category"""
+        try:
+            category = Category.query.get_or_404(category_id)
+            # Kiểm tra xem có địa điểm nào đang dùng category này không
+            if category.locations.count() > 0:
+                return {'error': 'Không thể xóa danh mục đang có địa điểm'}, 400
+                
+            db.session.delete(category)
+            db.session.commit()
+            return {'message': 'Xóa danh mục thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
 
 def get_places_service():
     """Factory for PlacesService"""

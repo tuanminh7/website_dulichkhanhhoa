@@ -1,7 +1,8 @@
-import json, uuid
+import json, uuid, os
+import pathlib
 
-from flask import Blueprint, request, jsonify, session
-from flask_login import current_user
+from flask import Blueprint, request, jsonify, session, Response, stream_with_context, send_file, current_app
+from flask_login import current_user, login_required
 from app.services.ai_service import get_ai_service
 from app.services.itinerary_service import get_itinerary_service
 from app.models.ai import ChatSession
@@ -12,19 +13,41 @@ from datetime import datetime
 
 bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
+
+@bp.route('/img/<slug>', methods=['GET'])
+def serve_image(slug):
+    """Serve images by short numeric slug ID to avoid long Vietnamese URLs in SSE stream."""
+    try:
+        backend_dir = pathlib.Path(current_app.root_path).parent
+        image_dir = backend_dir / 'static' / 'images' / 'anh'
+        if not image_dir.exists():
+            image_dir = pathlib.Path(current_app.root_path) / 'static' / 'images' / 'anh'
+        
+        images = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
+        idx = int(slug) - 1
+        if 0 <= idx < len(images):
+            filepath = image_dir / images[idx]
+            return send_file(str(filepath))
+        return jsonify({'error': 'Image not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @bp.route('/chat', methods=['POST'])
 def chat():
-    """Chat với AI"""
+    """Chat với AI (Streaming)"""
     try:
         data = request.get_json()
         message = data.get('message', '').strip()
+        session_id = data.get('session_id')
         
         if not message:
             return jsonify({'error': 'Tin nhắn không được để trống'}), 400
         
         # Get or create session
-        session_id = data.get('session_id') or str(uuid.uuid4())
+        from app.models.ai import ChatSession, ChatMessage
         
+<<<<<<< HEAD
         # Get chat history
         chat_session = ChatSession.query.filter_by(id=session_id).first()
         chat_history = []
@@ -32,60 +55,86 @@ def chat():
         if chat_session:
             if chat_session.messages:
                 chat_history = json.loads(chat_session.messages)
+=======
+        if session_id:
+            chat_session = ChatSession.query.get(session_id)
+>>>>>>> Tuan
         else:
-            # Create new session
+            chat_session = None
+
+        if not chat_session:
             chat_session = ChatSession(
+<<<<<<< HEAD
                 id=session_id,
+=======
+>>>>>>> Tuan
                 user_id=current_user.id if current_user.is_authenticated else None,
                 title=message[:100]
             )
             db.session.add(chat_session)
+            db.session.commit()
         
+        # Get history
+        history_msgs = ChatMessage.query.filter_by(session_id=chat_session.id).order_by(ChatMessage.created_at.asc()).all()
+        chat_history = []
+        for h in history_msgs[-10:]:
+            chat_history.append({
+                'role': 'user' if h.sender_type == 'USER' else 'assistant',
+                'content': h.message_content
+            })
+        
+<<<<<<< HEAD
         
         # Build context
+=======
+>>>>>>> Tuan
         context = {}
-        
-        # Add user preferences if authenticated
         if current_user.is_authenticated and current_user.preferences:
-            context['user_preferences'] = json.loads(current_user.preferences)
-        
-        # Add selected places if provided
-        if 'place_ids' in data:
-            locations = Location.query.filter(Location.id.in_(data['place_ids'])).all()
-            context['selected_places'] = [l.to_dict() for l in locations]
-        
-        # Call AI service
+            try:
+                context['user_preferences'] = json.loads(current_user.preferences)
+            except: pass
+
         ai_service = get_ai_service()
-        result = ai_service.chat(message, context=context, chat_history=chat_history)
-        
-        if not result['success']:
-            return jsonify({'error': result.get('error')}), 500
-        
-        # Update chat history
-        chat_history.append({
-            'role': 'user',
-            'content': message,
-            'timestamp': str(datetime.utcnow())
-        })
-        chat_history.append({
-            'role': 'assistant',
-            'content': result['response'],
-            'timestamp': str(datetime.utcnow())
-        })
-        
-        # Save to database
-        chat_session.messages = json.dumps(chat_history, ensure_ascii=False)
-        chat_session.message_count = len(chat_history)
-        db.session.commit()
-        
-        return jsonify({
-            'response': result['response'],
-            'session_id': session_id,
-            'model': result.get('model')
-        })
+
+        def generate():
+            full_response = ""
+            # Yield session info first
+            yield f"data: {json.dumps({'session_id': chat_session.id})}\n\n"
+            
+            for chunk in ai_service.chat_stream(message, context=context, chat_history=chat_history):
+                full_response += chunk
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+            
+            # Save messages when done
+            try:
+                user_msg = ChatMessage(
+                    session_id=chat_session.id,
+                    sender_type='USER',
+                    message_content=message
+                )
+                ai_msg = ChatMessage(
+                    session_id=chat_session.id,
+                    sender_type='AI',
+                    message_content=full_response
+                )
+                db.session.add(user_msg)
+                db.session.add(ai_msg)
+                db.session.commit()
+                # Final signal
+                yield f"data: {json.dumps({'done': True, 'ai_message': ai_msg.to_dict()})}\n\n"
+            except Exception as e:
+                current_app.logger.error(f"Error saving chat history: {str(e)}")
+            
+        resp = Response(stream_with_context(generate()), mimetype='text/event-stream')
+        resp.headers['Cache-Control'] = 'no-cache'
+        resp.headers['X-Accel-Buffering'] = 'no'
+        resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:5173'
+        resp.headers['Access-Control-Allow-Credentials'] = 'true'
+        return resp
         
     except Exception as e:
-        db.session.rollback()
+        if db.session.is_active:
+            db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
@@ -193,21 +242,54 @@ def estimate_cost():
         return jsonify({'error': str(e)}), 500
 
 
-@bp.route('/chat-sessions', methods=['GET'])
-def get_chat_sessions():
-    """Lấy danh sách chat sessions (cho user đã đăng nhập)"""
-    if not current_user.is_authenticated:
-        return jsonify({'error': 'Vui lòng đăng nhập'}), 401
-    
+@bp.route('/sessions', methods=['POST'])
+def create_session():
+    """Tạo cuộc hội thoại mới"""
     try:
-        sessions = ChatSession.query.filter_by(
-            user_id=current_user.id
-        ).order_by(ChatSession.updated_at.desc()).limit(20).all()
+        data = request.get_json()
+        title = data.get('title', 'Cuộc hội thoại mới')
         
-        return jsonify({
-            'sessions': [session.to_dict() for session in sessions]
-        })
+        from app.models.ai import ChatSession
+        chat_session = ChatSession(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            title=title
+        )
+        db.session.add(chat_session)
+        db.session.commit()
         
+        return jsonify(chat_session.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/sessions', methods=['GET'])
+def get_chat_sessions():
+    """Lấy danh sách chat sessions"""
+    try:
+        if current_user.is_authenticated:
+            sessions = ChatSession.query.filter_by(
+                user_id=current_user.id
+            ).order_by(ChatSession.started_at.desc()).limit(20).all()
+        else:
+            # For guests, we could return sessions from current flask session if tracked,
+            # but for now let's just return empty or recent public ones if any. 
+            # Usually guests don't have a history unless stored in localstorage.
+            sessions = []
+        
+        return jsonify([session.to_dict() for session in sessions])
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/sessions/<int:session_id>/messages', methods=['GET'])
+def get_chat_session_messages(session_id):
+    """Lấy danh sách tin nhắn của session"""
+    try:
+        from app.models.ai import ChatMessage
+        messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at.asc()).all()
+        return jsonify([m.to_dict() for m in messages])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

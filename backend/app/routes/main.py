@@ -42,3 +42,13 @@ def health_check():
         'service': 'Tourism API',
         'version': '1.0.0'
     })
+
+
+@bp.route('/')
+def index():
+    """Root index - provide quick info or redirect to health endpoint"""
+    # Simple JSON response so visiting the root doesn't return 404
+    return jsonify({
+        'message': 'Tourism API running',
+        'health': '/api/health'
+    })

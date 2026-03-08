@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
     
     # Relationships
     preferences = db.relationship(
@@ -47,6 +48,7 @@ class User(UserMixin, db.Model):
             'phone': self.phone,
             'avatar': self.avatar,
             'role': self.role,
+            'is_active': self.is_active,
             'created_at': self.created_at.isoformat()
         }
     

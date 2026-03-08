@@ -36,9 +36,11 @@ def register():
 def login():
     print(request.cookies)
     data = request.get_json()
+    fullname = data.get('fullname', '')
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     
+<<<<<<< HEAD
     result, status_code = AuthService.login_user_by_email(email, password)    
 
     response = make_response(jsonify(result), status_code)
@@ -63,6 +65,21 @@ def login():
 
     return response
 
+=======
+    result, status_code = AuthService.register_user(fullname, email, password)
+    return jsonify(result), status_code
+
+@bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    # Accept both "email" and "username" in case frontend sends either
+    email = (data.get('email') or data.get('username', '')).strip().lower()
+    password = data.get('password', '')
+    remember = data.get('remember', False)
+    
+    result, status_code = AuthService.login_user_by_email(email, password, remember)
+    return jsonify(result), status_code
+>>>>>>> Tuan
 
 @bp.route('/logout', methods=['POST'])
 @jwt_required(verify_type=False)

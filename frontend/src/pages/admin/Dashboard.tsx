@@ -3,6 +3,7 @@ import { adminService } from '../../services/api';
 import type { SystemStatistic } from '../../types';
 import { Users, MapPin, MessageSquare, TrendingUp, Activity, ArrowUpRight, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
     const [stats, setStats] = useState<SystemStatistic | null>(null);
@@ -129,18 +130,18 @@ const Dashboard: React.FC = () => {
                         <div className="bg-blue-600 rounded-[2.5rem] p-8 shadow-xl shadow-blue-500/20 text-white">
                             <h3 className="text-xl font-bold mb-6">Thao tác nhanh</h3>
                             <div className="space-y-3">
-                                <button className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
-                                    <span>Thêm địa điểm mới</span>
+                                <Link to="/admin/locations" className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
+                                    <span>Quản lý địa điểm</span>
                                     <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                </button>
-                                <button className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
+                                </Link>
+                                <Link to="/admin/users" className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
                                     <span>Quản lý người dùng</span>
                                     <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                </button>
-                                <button className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
-                                    <span>Cập nhật bảng giá</span>
+                                </Link>
+                                <Link to="/admin/categories" className="w-full p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all flex items-center justify-between group font-semibold">
+                                    <span>Quản lý danh mục</span>
                                     <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                                </button>
+                                </Link>
                             </div>
                         </div>
 

@@ -24,11 +24,15 @@ flask-restplus==0.13.0
 Flask-Session==0.8.0
 Flask-SQLAlchemy==3.1.1
 Flask-Testing==0.8.1
-google-ai-generativelanguage==0.4.0
+google-ai-generativelanguage==0.6.6
 google-api-core==2.30.0
 google-auth==2.48.0
+<<<<<<< HEAD
 google-genai==1.65.0
 google-generativeai==0.3.2
+=======
+google-generativeai==0.7.2
+>>>>>>> Tuan
 googleapis-common-protos==1.72.0
 greenlet==3.3.1
 grpcio==1.78.0

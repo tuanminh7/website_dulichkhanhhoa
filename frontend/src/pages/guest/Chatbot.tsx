@@ -30,11 +30,18 @@ const Chatbot: React.FC = () => {
         try {
             const res = await chatService.getSessions();
             setSessions(res.data);
-            if (res.data.length > 0 && !currentSessionId) {
-                setCurrentSessionId(res.data[0].id);
+            if (res.data.length > 0) {
+                if (!currentSessionId) {
+                    setCurrentSessionId(res.data[0].id);
+                }
+            } else {
+                // If no sessions (e.g. guest or new user), create one automatically
+                createNewSession();
             }
         } catch (error) {
             console.error('Error fetching sessions:', error);
+            // Even on error (maybe 401), try to create a guest session
+            createNewSession();
         }
     };
 
@@ -49,7 +56,7 @@ const Chatbot: React.FC = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim() || !currentSessionId) return;
+        if (!input.trim()) return;
 
         const userMsg: any = {
             id: Date.now(),
@@ -63,10 +70,89 @@ const Chatbot: React.FC = () => {
         setIsTyping(true);
 
         try {
-            const res = await chatService.sendMessage(currentSessionId, input);
-            setMessages(prev => [...prev, res.data]);
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ session_id: currentSessionId, message: input })
+            });
+
+            if (!response.ok) throw new Error('Failed to send message');
+
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('No reader found');
+
+            const decoder = new TextDecoder();
+            let aiMessageId: number | null = null;
+            let currentText = '';
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (value) {
+                    buffer += decoder.decode(value, { stream: !done });
+                }
+
+                // Process all complete lines in the buffer
+                const lines = buffer.split('\n');
+                // If not done, keep last partial line in buffer; if done, process everything
+                buffer = done ? '' : (lines.pop() || '');
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+
+                    try {
+                        const data = JSON.parse(trimmedLine.slice(6));
+
+                        if (data.session_id && !currentSessionId) {
+                            setCurrentSessionId(data.session_id);
+                        }
+
+                        if (data.text) {
+                            currentText += data.text;
+                            setMessages(prev => {
+                                const lastMsg = prev[prev.length - 1];
+                                if (lastMsg && lastMsg.sender_type === 'AI' && lastMsg.id === aiMessageId) {
+                                    return [...prev.slice(0, -1), { ...lastMsg, message_content: currentText }];
+                                } else {
+                                    const newMsg: ChatMessage = {
+                                        id: Date.now(),
+                                        session_id: currentSessionId || 0,
+                                        sender_type: 'AI',
+                                        message_content: currentText,
+                                        created_at: new Date().toISOString()
+                                    };
+                                    aiMessageId = newMsg.id;
+                                    return [...prev, newMsg];
+                                }
+                            });
+                        }
+
+                        if (data.done && data.ai_message) {
+                            setMessages(prev => prev.map(m => m.id === aiMessageId ? data.ai_message : m));
+                        }
+                    } catch (e) {
+                        // skip malformed chunks
+                    }
+                }
+
+                if (done) break;
+            }
         } catch (error) {
             console.error('Error sending message:', error);
+            // Add error message to UI
+            const errorMsg: ChatMessage = {
+                id: Date.now(),
+                session_id: currentSessionId || 0,
+                sender_type: 'AI',
+                message_content: "Xin lỗi, đã có lỗi xảy ra khi kết nối với AI. Bạn hãy thử lại sau nhé.",
+                created_at: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, errorMsg]);
         } finally {
             setIsTyping(false);
         }
@@ -173,8 +259,30 @@ const Chatbot: React.FC = () => {
                                         {msg.sender_type === 'USER' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                     </div>
                                     <div className={`p-4 rounded-2xl shadow-sm ${msg.sender_type === 'USER' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}>
-                                        <p className="text-sm leading-relaxed">{msg.message_content}</p>
-                                        <span className={`text-[9px] mt-1 block ${msg.sender_type === 'USER' ? 'text-blue-100 text-right' : 'text-gray-400'}`}>
+                                        <div className="text-sm leading-relaxed space-y-2">
+                                            {msg.message_content.split(/(![\s\S]*?\([^)]*\))/g).map((part, i) => {
+                                                const match = part.match(/!\[([^\]]*?)\]\(([^)]+)\)/);
+                                                if (match) {
+                                                    const [, alt, url] = match;
+                                                    const imageUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api'}${url.replace('/api', '')}`;
+                                                    return (
+                                                        <div key={i} className="my-2">
+                                                            <img
+                                                                src={imageUrl}
+                                                                alt={alt}
+                                                                className="rounded-xl w-full max-w-sm shadow-md hover:shadow-lg transition-shadow cursor-zoom-in"
+                                                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                            />
+                                                            {alt && !alt.toLowerCase().endsWith('.jpg') && !alt.toLowerCase().endsWith('.webp') && (
+                                                                <p className="text-[10px] text-gray-400 mt-1 italic">{alt}</p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                }
+                                                return <p key={i} className="whitespace-pre-wrap">{part}</p>;
+                                            })}
+                                        </div>
+                                        <span className={`text-[9px] mt-2 block ${msg.sender_type === 'USER' ? 'text-blue-100 text-right' : 'text-gray-400'}`}>
                                             {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
@@ -216,7 +324,7 @@ const Chatbot: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            disabled={!input.trim() || !currentSessionId}
+                            disabled={!input.trim()}
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-4 rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center shrink-0"
                         >
                             <Send className="w-5 h-5" />
