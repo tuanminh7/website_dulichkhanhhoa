@@ -34,6 +34,8 @@ services:
     build: ./frontend
     restart: always
     image: ghcr.io/tuanminh7/react-frontend:latest
+    environment:
+      - SERVER_IP=${SERVER_IP}
     ports:
       - "80:80"
       - "443:443"
@@ -45,7 +47,6 @@ services:
       # Map chứng chỉ trực tiếp từ máy chủ VPS vào Nginx
       - /etc/letsencrypt:/etc/letsencrypt:ro
 
-
   redis:
     image: redis:alpine
     container_name: redis
@@ -55,7 +56,6 @@ services:
       - redis_data:/data
     networks:
       - app-network
-
 
 volumes:
   postgres_data:

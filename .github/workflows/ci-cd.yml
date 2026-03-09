@@ -78,6 +78,7 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             cat <<EOF > .env
             ${{ secrets.ENVIRONMENT }}
+            SERVER_IP=${{ secrets.SERVER_IP }}
             EOF
 
             docker compose down
