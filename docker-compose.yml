@@ -41,6 +41,9 @@ services:
       - backend
     networks:
       - app-network
+    volumes:
+      # Map chứng chỉ trực tiếp từ máy chủ VPS vào Nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 
   redis:
