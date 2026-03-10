@@ -64,11 +64,25 @@ class PlacesService:
             return {'error': str(e)}, 500
 
     @staticmethod
+    def get_dishes():
+        """Lấy danh sách món ăn đặc sản"""
+        try:
+            from app.models.dish import Dish
+            dishes = Dish.query.all()
+            return [dish.to_dict() for dish in dishes], 200
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+    @staticmethod
     def get_place(place_id):
         """Get a single place by ID"""
         try:
             location = Location.query.get_or_404(place_id)
-            return location.to_dict(), 200
+            data = location.to_dict()
+            # Thêm thông tin category vào kết quả trả về
+            if location.category:
+                data['category'] = location.category.to_dict()
+            return data, 200
         except Exception as e:
             return {'error': str(e)}, 500
         

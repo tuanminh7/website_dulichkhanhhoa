@@ -12,9 +12,8 @@ const Stay: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await locationService.getAll();
-                // Filter locations that are STAY type
-                setAccommodations(res.data.filter(loc => loc.category?.type === 'STAY'));
+                const res = await locationService.getAll({ category: 'STAY' });
+                setAccommodations(res.data.places);
             } catch (error) {
                 console.error('Error fetching stay data:', error);
             } finally {

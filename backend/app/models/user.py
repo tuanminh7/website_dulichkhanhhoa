@@ -33,6 +33,9 @@ class User(UserMixin, db.Model):
         'ChatSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    posts = db.relationship('Post', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    post_comments = db.relationship('Comment', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    post_likes = db.relationship('Like', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password).decode('utf-8')

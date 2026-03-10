@@ -20,6 +20,9 @@ import ManageLocations from './pages/admin/ManageLocations';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageCategories from './pages/admin/ManageCategories';
 import ForgotPassword from './pages/guest/ForgotPassword';
+import NewsList from './pages/News/NewsList';
+import NewsDetail from './pages/News/NewsDetail';
+import CreatePost from './pages/News/CreatePost';
 
 function App() {
   return (
@@ -41,6 +44,9 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="news" element={<NewsList />} />
+          <Route path="news/:id" element={<NewsDetail />} />
+          <Route path="news/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

@@ -70,7 +70,11 @@ class Location(db.Model):
 
 
     def to_dict(self):
-        return {
+        primary_image = self.images.filter_by(is_primary=True).first()
+        if not primary_image:
+            primary_image = self.images.first()
+            
+        data = {
             'id': self.id,
             'category_id': self.category_id,
             'name': self.name,
@@ -81,8 +85,15 @@ class Location(db.Model):
             'rating_avg': self.rating_avg,
             'status': self.status,
             'path': self.path,
-            'map_url': self.map_url
+            'map_url': self.map_url,
+            'images': [img.to_dict() for img in self.images.all()]
         }
+        
+        # Include category info if loaded
+        if self.category:
+            data['category'] = self.category.to_dict()
+            
+        return data
 
 
 class LocationImage(db.Model):

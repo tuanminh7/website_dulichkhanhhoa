@@ -14,10 +14,10 @@ const Food: React.FC = () => {
             try {
                 const [dishRes, locRes] = await Promise.all([
                     dishService.getAll(),
-                    locationService.getAll()
+                    locationService.getAll({ category: 'FOOD' })
                 ]);
                 setDishes(dishRes.data);
-                setRestaurants(locRes.data.filter(loc => loc.category?.type === 'FOOD'));
+                setRestaurants(locRes.data.places);
             } catch (error) {
                 console.error('Error fetching food data:', error);
             } finally {

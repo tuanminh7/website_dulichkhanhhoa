@@ -15,10 +15,10 @@ const Locations: React.FC = () => {
         const fetchData = async () => {
             try {
                 const [locRes, catRes] = await Promise.all([
-                    locationService.getAll(),
+                    locationService.getAll({ status: 'ACTIVE' }),
                     categoryService.getAll()
                 ]);
-                setLocations(locRes.data);
+                setLocations(locRes.data.places);
                 setCategories(catRes.data);
             } catch (error) {
                 console.error('Error fetching data:', error);

@@ -118,3 +118,10 @@ def delete_category(category_id):
     
     result, status_code = PlacesService.delete_category(category_id)
     return jsonify(result), status_code
+
+
+@bp.route('/dishes', methods=['GET'])
+def get_dishes():
+    """Lấy danh sách món ăn"""
+    result, status_code = PlacesService.get_dishes()
+    return jsonify(result), status_code

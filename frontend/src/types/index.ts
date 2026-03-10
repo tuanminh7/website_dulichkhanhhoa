@@ -121,3 +121,36 @@ export interface SystemStatistic {
     most_visited_location_id?: number;
     most_visited_locations?: any[];
 }
+
+export interface Post {
+    id: string;
+    title: string;
+    content: string;
+    image_url?: string;
+    author_id: string;
+    author_name: string;
+    likes_count: number;
+    comments_count: number;
+    created_at: string;
+    updated_at: string;
+    comments?: Comment[];
+}
+
+
+export interface Comment {
+    id: string;
+    post_id: string;
+    user_id: string;
+    user_name: string;
+    user_avatar?: string;
+    content: string;
+    created_at: string;
+}
+
+export interface Like {
+    id: number;
+    post_id: string;
+    user_id: string;
+    created_at: string;
+}
+

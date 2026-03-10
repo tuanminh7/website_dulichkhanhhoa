@@ -29,6 +29,8 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - ~/webapp/uploads:/app/uploads:ro
 
   frontend:
     build: ./frontend
@@ -44,8 +46,8 @@ services:
     networks:
       - app-network
     volumes:
-      # Map chứng chỉ trực tiếp từ máy chủ VPS vào Nginx
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ~/webapp/uploads:/var/www/uploads:ro
 
   redis:
     image: redis:alpine

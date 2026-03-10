@@ -9,6 +9,8 @@ import type {
     User,
     Review,
     Favorite,
+    Post,
+    Comment as PostComment,
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -58,24 +60,24 @@ api.interceptors.request.use(
 
 // API services
 export const locationService = {
-    getAll: () => api.get<Location[]>('/places'),
-    getById: (id: number) => api.get<Location>(`/places/${id}`),
-    create: (data: any) => api.post<Location>('/places', data),
-    update: (id: number, data: any) => api.put<Location>(`/places/${id}`, data),
-    delete: (id: number) => api.delete(`/places/${id}`),
+    getAll: (params?: any) => api.get<{ places: Location[], total: number, pages: number, current_page: number }>('/locations', { params }),
+    getById: (id: number) => api.get<Location>(`/locations/${id}`),
+    create: (data: any) => api.post<Location>('/locations', data),
+    update: (id: number, data: any) => api.put<Location>(`/locations/${id}`, data),
+    delete: (id: number) => api.delete(`/locations/${id}`),
 };
 
 export const categoryService = {
-    getAll: () => api.get<Category[]>('/places/categories'),
-    getById: (id: number) => api.get<Category>(`/places/categories/${id}`),
-    create: (data: Partial<Category>) => api.post<Category>('/places/categories', data),
-    update: (id: number, data: Partial<Category>) => api.put<Category>(`/places/categories/${id}`, data),
-    delete: (id: number) => api.delete(`/places/categories/${id}`),
+    getAll: () => api.get<Category[]>('/locations/categories'),
+    getById: (id: number) => api.get<Category>(`/locations/categories/${id}`),
+    create: (data: Partial<Category>) => api.post<Category>('/locations/categories', data),
+    update: (id: number, data: Partial<Category>) => api.put<Category>(`/locations/categories/${id}`, data),
+    delete: (id: number) => api.delete(`/locations/categories/${id}`),
 };
 
 export const dishService = {
-    getAll: () => api.get<Dish[]>('/dishes'),
-    getById: (id: number) => api.get<Dish>(`/dishes/${id}`),
+    getAll: () => api.get<Dish[]>('/locations/dishes'),
+    getById: (id: number) => api.get<Dish>(`/locations/dishes/${id}`),
 };
 
 export const authService = {
@@ -98,6 +100,14 @@ export const interactionService = {
     addReview: (locationId: number, data: any) => api.post<Review>(`/locations/${locationId}/reviews`, data),
     getFavorites: () => api.get<Favorite[]>('/favorites'),
     toggleFavorite: (locationId: number) => api.post(`/favorites/toggle`, { locationId }),
+};
+
+export const newsService = {
+    getAll: (params?: any) => api.get<{ posts: Post[], total: number, pages: number, current_page: number }>('/news', { params }),
+    getById: (id: string) => api.get<Post>(`/news/${id}`),
+    create: (data: any) => api.post<Post>('/news', data),
+    addComment: (postId: string, content: string) => api.post<PostComment>(`/news/${postId}/comment`, { content }),
+    toggleLike: (postId: string) => api.post<{ message: string, liked: boolean }>(`/news/${postId}/like`),
 };
 
 export const adminService = {

@@ -37,7 +37,7 @@ def create_app(config_name=None):
     jwt.init_app(app)
     # app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
-    from app.routes import main, auth, places, ai, maps, admin, user
+    from app.routes import main, auth, places, ai, maps, admin, user, news
 
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
@@ -46,6 +46,7 @@ def create_app(config_name=None):
     app.register_blueprint(maps.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(user.bp)
+    app.register_blueprint(news.bp)
     
     with app.app_context():
         db.create_all()

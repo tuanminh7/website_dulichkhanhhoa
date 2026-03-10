@@ -50,112 +50,103 @@ def init_db():
 
 
 def seed_db():
+    print("Seeding database with Ninh Thuan tourism data...")
     
-    print("Seeding database...")
-    
-    # 1. Create Categories
-    categories_data = [
-        {'name': 'Địa điểm du lịch', 'type': 'ATTRACTION', 'icon': 'map-pin'},
-        {'name': 'Ẩm thực', 'type': 'FOOD', 'icon': 'utensils'},
-        {'name': 'Lưu trú', 'type': 'STAY', 'icon': 'hotel'},
-        {'name': 'Hoạt động', 'type': 'ATTRACTION', 'icon': 'activity'}
-    ]
-    
-    categories = {}
     with app.app_context():
-        for cat_data in categories_data:
-            existing = Category.query.filter_by(name=cat_data['name']).first()
-            if not existing:
-                    cat = Category(**cat_data)
-                    db.session.add(cat)
-                    db.session.commit()
-                    categories[cat_data['name']] = cat
-                    print(f"✓ Created category: {cat_data['name']}")
-            else:
-                categories[cat_data['name']] = existing
-
-        # 2. Create Users
-        admin = User.query.filter_by(email=app.config['ADMIN_EMAIL']).first()
-        print(admin)
-        if not admin:
-            admin = User(
-                fullname='Administrator',
-                email=app.config['ADMIN_EMAIL'],
-                role='ADMIN'
-            )
-            admin.set_password(app.config['ADMIN_PASSWORD'])
-            db.session.add(admin)
-            print("✓ Admin user created")
-    
-        # Create sample user
-        user = User.query.filter_by(email='user@example.com').first()
-        if not user:
-            user = User(
-                fullname='Test User',
-                email='user@example.com',
-                role='USER'
-            )
-            user.set_password('password123')
-            db.session.add(user)
-            print("✓ Sample user created")
-    
-        db.session.commit()
-        
-        # 3. Create Locations
-        sample_locations = [
-            {
-                'category_id': categories['Địa điểm du lịch'].id,
-                'name': 'Vịnh Hạ Long',
-                'description': 'Di sản thiên nhiên thế giới với hàng nghìn hòn đảo đá vôi nổi trên mặt nước trong xanh.',
-                'address': 'Quảng Ninh, Việt Nam',
-                'price_range_min': 500000,
-                'price_range_max': 5000000,
-                'status': 'ACTIVE'
-            },
-            {
-                'category_id': categories['Địa điểm du lịch'].id,
-                'name': 'Phố Cổ Hà Nội',
-                'description': 'Khu phố cổ với kiến trúc truyền thống, văn hóa lâu đời và ẩm thực phong phú.',
-                'address': 'Hoàn Kiếm, Hà Nội',
-                'price_range_min': 0,
-                'price_range_max': 1000000,
-                'status': 'ACTIVE'
-            },
-            {
-                'category_id': categories['Ẩm thực'].id,
-                'name': 'Nhà Hàng Phở Gia Truyền',
-                'description': 'Phở Hà Nội truyền thống với công thức gia truyền hơn 50 năm.',
-                'address': '49 Bát Đàn, Hoàn Kiếm, Hà Nội',
-                'price_range_min': 50000,
-                'price_range_max': 150000,
-                'status': 'ACTIVE'
-            },
-            {
-                'category_id': categories['Lưu trú'].id,
-                'name': 'Khách Sạn Paradise',
-                'description': 'Khách sạn 4 sao với đầy đủ tiện nghi hiện đại và dịch vụ chu đáo.',
-                'address': 'Ba Đình, Hà Nội',
-                'price_range_min': 1000000,
-                'price_range_max': 3000000,
-                'status': 'ACTIVE'
-            },
-            {
-                'category_id': categories['Hoạt động'].id,
-                'name': 'Tour Trekking Sapa',
-                'description': 'Tour leo núi và khám phá văn hóa các dân tộc thiểu số tại Sapa.',
-                'address': 'Sapa, Lào Cai',
-                'price_range_min': 500000,
-                'price_range_max': 2000000,
-                'status': 'ACTIVE'
-            }
+        # 1. Create Categories
+        categories_data = [
+            {'name': 'Điểm đến tiêu biểu', 'type': 'ATTRACTION', 'icon': 'map-pin'},
+            {'name': 'Bãi biển & Vịnh', 'type': 'ATTRACTION', 'icon': 'waves'},
+            {'name': 'Văn hóa & Lịch sử', 'type': 'ATTRACTION', 'icon': 'landmark'},
+            {'name': 'Thiên nhiên & Sinh thái', 'type': 'ATTRACTION', 'icon': 'trees'},
+            {'name': 'Ẩm thực Ninh Thuận', 'type': 'FOOD', 'icon': 'utensils'},
+            {'name': 'Lưu trú nghỉ dưỡng', 'type': 'STAY', 'icon': 'hotel'},
         ]
+
+        categories = {}
+        for cat_data in categories_data:
+            cat = Category.query.filter_by(name=cat_data['name']).first()
+            if not cat:
+                cat = Category(**cat_data)
+                db.session.add(cat)
+                db.session.commit()
+                print(f"✓ Created category: {cat_data['name']}")
+            categories[cat_data['name']] = cat
+
+        # 2. Map filenames to categories and descriptions
+        image_mapping = {
+            "Biển Cà Ná.jpg": ("Bãi biển & Vịnh", "Biển Cà Ná - Cung đường biển đẹp nhất Việt Nam."),
+            "Bánh căn.webp": ("Ẩm thực Ninh Thuận", "Bánh căn Ninh Thuận - Món ăn dân dã đặc trưng."),
+            "Bãi Hỏm - Nơi rùa biển về đẻ trứng.jpg": ("Bãi biển & Vịnh", "Bãi Hỏm - Vẻ đẹp hoang sơ, yên bình."),
+            "Bãi Tràng - Thiên đường cắm trại.jpg": ("Bãi biển & Vịnh", "Bãi Tràng - Địa điểm cắm trại lý tưởng."),
+            "Bãi biển Bình Tiên.jpg": ("Bãi biển & Vịnh", "Bãi biển Bình Tiên - Viên ngọc ẩn mình."),
+            "Bún sứa.webp": ("Ẩm thực Ninh Thuận", "Bún sứa - Đặc sản biển tươi ngon."),
+            "Bảo tàng Ninh Thuận - Dấu ấn kiến trúc độc đáo.jpg": ("Văn hóa & Lịch sử", "Bảo tàng Ninh Thuận với kiến trúc độc đáo."),
+            "Cánh đồng điện gió Đầm Nại - Biểu tượng năng lượng sạch.jpg": ("Điểm đến tiêu biểu", "Cánh đồng điện gió Đầm Nại."),
+            "Hang Rái.webp": ("Thiên nhiên & Sinh thái", "Hang Rái - Tuyệt tác thiên nhiên ven biển."),
+            "Hòn Đỏ - Thiên đường san hô dưới lòng biển.jpg": ("Thiên nhiên & Sinh thái", "Hòn Đỏ - Khám phá san hô."),
+            "Làng Gốm Bàu Trúc.jpg": ("Văn hóa & Lịch sử", "Làng Gốm Bàu Trúc - Làng gốm cổ nhất Đông Nam Á."),
+            "Làng nho Thái An - Thủ phủ nho.webp": ("Ẩm thực Ninh Thuận", "Làng nho Thái An."),
+            "Mũi Đá Vách.jpg": ("Thiên nhiên & Sinh thái", "Mũi Đá Vách - Hùng vĩ giữa biển khơi."),
+            "Núi Đá Chồng (Núi Phụng Hoàng).webp": ("Thiên nhiên & Sinh thái", "Núi Đá Chồng - Tầm nhìn bao quát Phan Rang."),
+            "Thác Chapơr.jpg": ("Thiên nhiên & Sinh thái", "Thác Chapơr - Dải lụa trắng giữa đại ngàn."),
+            "Tháp Po Klong Garai.jpg": ("Văn hóa & Lịch sử", "Tháp Po Klong Garai - Di tích Chăm cổ kính."),
+            "Trùng Sơn Cổ Tự - Ngôi chùa trên đỉnh núi Đá Chồng.webp": ("Văn hóa & Lịch sử", "Trùng Sơn Cổ Tự."),
+            "Vườn nho Ba Mọi - Trải nghiệm văn hóa nho Ninh Thuận.jpg": ("Ẩm thực Ninh Thuận", "Vườn nho Ba Mọi."),
+            "Vườn quốc gia Núi Chúa - Rừng khô hạn châu Phi của Việt Nam.jpg": ("Thiên nhiên & Sinh thái", "Vườn quốc gia Núi Chúa."),
+            "Vườn quốc gia Phước Bình.jpg": ("Thiên nhiên & Sinh thái", "Vườn quốc gia Phước Bình."),
+            "Vịnh Vĩnh Hy.jpg": ("Bãi biển & Vịnh", "Vịnh Vĩnh Hy - Một trong những vịnh đẹp nhất Việt Nam."),
+            "Đèo Ngoạn Mục.jpg": ("Điểm đến tiêu biểu", "Đèo Ngoạn Mục - Cung đèo hiểm trở và tuyệt đẹp."),
+            "Đầm Nại.jpg": ("Thiên nhiên & Sinh thái", "Đầm Nại."),
+            "Đồi cát Nam Cương.jpg": ("Thiên nhiên & Sinh thái", "Đồi cát Nam Cương - Vẻ đẹp của gió và cát."),
+            "Đồng Cừu Ysa Núi Hòn Vàng Krong Pha.png": ("Điểm đến tiêu biểu", "Đồng cừu Ysa."),
+        }
+
+        image_dir = "static/images/anh/"
         
-        for loc_data in sample_locations:
-            existing = Location.query.filter_by(name=loc_data['name']).first()
-            if not existing:
-                location = Location(**loc_data)
-                db.session.add(location)
-                print(f"✓ Created location: {loc_data['name']}")
+        for filename, (cat_name, desc) in image_mapping.items():
+            name = filename.split('.')[0]
+            if " - " in name:
+                name = name.split(" - ")[0]
+            
+            # Create Location
+            loc = Location.query.filter_by(name=name).first()
+            if not loc:
+                loc = Location(
+                    name=name,
+                    category_id=categories[cat_name].id,
+                    description=desc,
+                    address="Ninh Thuận",
+                    price_range_min=0,
+                    price_range_max=0,
+                    status='ACTIVE'
+                )
+                db.session.add(loc)
+                db.session.commit()
+                print(f"✓ Created location: {name}")
+            
+            # Create Image and link to location
+            img_path = f"/{image_dir}{filename}"
+            img = LocationImage.query.filter_by(image_url=img_path, location_id=loc.id).first()
+            if not img:
+                img = LocationImage(
+                    location_id=loc.id,
+                    image_url=img_path,
+                    is_primary=True
+                )
+                db.session.add(img)
+            
+            # If it's food, also add to Dish table
+            if categories[cat_name].type == 'FOOD':
+                dish = Dish.query.filter_by(name=name).first()
+                if not dish:
+                    dish = Dish(
+                        name=name,
+                        description=desc,
+                        image_url=img_path
+                    )
+                    db.session.add(dish)
+                    print(f"✓ Added dish: {name}")
         
         db.session.commit()
     print("\n[INFO] Database seeded successfully!")
@@ -177,6 +168,33 @@ def create_admin():
     db.session.commit()
     
     print(f"[INFO] Admin user '{fullname}' created successfully!")
+
+
+def seed_sql():
+    """Run dev_seed.sql using Python's sqlite3"""
+    import sqlite3
+    db_path = 'tourism.db'
+    seed_path = 'dev_seed.sql'
+    
+    if not os.path.exists(seed_path):
+        print(f"Lỗi: Không tìm thấy file {seed_path}")
+        return
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        print(f"Đang đọc dữ liệu từ {seed_path}...")
+        with open(seed_path, 'r', encoding='utf-8') as f:
+            sql_script = f.read()
+        print("Đang thêm dữ liệu vào database...")
+        cursor.executescript(sql_script)
+        conn.commit()
+        print("Hoàn thành! Dữ liệu đã được thêm thành công.")
+    except Exception as e:
+        print(f"Lỗi: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 def run():

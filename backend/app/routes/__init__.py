@@ -1,1 +1,1 @@
-from app.routes import main, auth, places, ai, maps, admin, user
+from app.routes import main, auth, places, ai, maps, admin, user, news

@@ -16,6 +16,7 @@ const Navbar: React.FC = () => {
         { name: 'Điểm đến', path: '/locations' },
         { name: 'Ẩm thực', path: '/food' },
         { name: 'Lưu trú', path: '/stay' },
+        { name: 'Tin tức', path: '/news' },
         { name: 'Tư vấn AI', path: '/chatbot' },
     ];
 
