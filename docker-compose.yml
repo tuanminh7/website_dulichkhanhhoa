@@ -33,13 +33,14 @@ services:
   backend:
     build: ./backend
     restart: always
-    image: ghcr.io/tuanminh7/flask-backend:latest
+    image: ghcr.io/${REPO_OWNER:-tuanminh7}/flask-backend:latest
     env_file: .env
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - REDIS_HOST=redis
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - FLASK_APP=manage:app
+      - REPO_OWNER=${REPO_OWNER:-tuanminh7}
     depends_on:
       db:
         condition: service_healthy
@@ -54,9 +55,9 @@ services:
     build:
       context: ./frontend
       args:
-        NGINX_CONF: ${FRONTEND_NGINX_CONF:-nginx.local.conf}
+        NGINX_CONF: ${FRONTEND_NGINX_CONF:-nginx.conf}
     restart: always
-    image: ghcr.io/tuanminh7/react-frontend:latest
+    image: ghcr.io/${REPO_OWNER:-tuanminh7}/react-frontend:latest
     environment:
       - SERVER_IP=${SERVER_IP}
     ports:
@@ -69,6 +70,7 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ~/webapp/uploads:/var/www/uploads:ro
+      # - ./frontend/${FRONTEND_NGINX_CONF:-nginx.conf}:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   postgres_data:
