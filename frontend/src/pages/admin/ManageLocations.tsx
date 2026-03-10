@@ -32,7 +32,7 @@ const ManageLocations: React.FC = () => {
                 locationService.getAll(),
                 categoryService.getAll()
             ]);
-            setLocations(locRes.data);
+            setLocations(locRes.data.places);
             setCategories(catRes.data);
         } catch (error) {
             console.error('Error fetching admin data:', error);
@@ -123,7 +123,7 @@ const ManageLocations: React.FC = () => {
 
                 <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
                     <div className="flex flex-col md:flex-row gap-4 mb-8">
-                        <div className="relative flex-grow">
+                        <div className="relative grow">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
                                 type="text"
@@ -210,7 +210,7 @@ const ManageLocations: React.FC = () => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
                     <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-10 relative shadow-2xl my-8">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-black text-gray-900">
