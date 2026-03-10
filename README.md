@@ -1,482 +1,165 @@
-# 🌍 Website Quảng Bá Du Lịch Địa Phương
+# 🌍 Website Quảng Bá Du Lịch Khánh Hòa (Khanh Hoa Tourism)
 
-> Hệ thống du lịch thông minh tích hợp AI và Google Maps để quảng bá du lịch địa phương, hỗ trợ tư vấn lịch trình tự động và ước tính chi phí.
+> Nền tảng du lịch thông minh tích hợp AI và Google Maps giúp quảng bá vẻ đẹp của vùng đất Khánh Hòa, hỗ trợ du khách tối ưu hóa hành trình và chi phí.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Python](https://img.shields.io/badge/python-3.8+-green)
-![Flask](https://img.shields.io/badge/flask-2.0+-red)
-![License](https://img.shields.io/badge/license-MIT-yellow)
+![React](https://img.shields.io/badge/Frontend-React%20+%20Vite-blue?style=flat-square&logo=react)
+![Flask](https://img.shields.io/badge/Backend-Flask-red?style=flat-square&logo=flask)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue?style=flat-square&logo=postgresql)
+![Docker](https://img.shields.io/badge/Container-Docker-blue?style=flat-square&logo=docker)
+![Gemini AI](https://img.shields.io/badge/AI-Gemini-orange?style=flat-square&logo=google-gemini)
 
 ---
 
-## 📋 Mục lục
+## 📖 Mục lục
 
-- [Giới thiệu](#-giới-thiệu)
-- [Tính năng](#-tính-năng)
-- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
-- [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
-- [Cài đặt](#-cài-đặt)
-- [Cấu hình](#-cấu-hình)
-- [Sử dụng](#-sử-dụng)
-- [API Endpoints](#-api-endpoints)
-- [Phân quyền](#-phân-quyền)
-- [Screenshots](#-screenshots)
-- [Roadmap](#-roadmap)
-- [Đóng góp](#-đóng-góp)
-- [License](#-license)
+- [🎯 Giới thiệu](#-giới-thiệu)
+- [✨ Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [🛠️ Công nghệ sử dụng](#-công-nghệ-sử-dụng)
+- [🏗️ Kiến trúc dự án](#-kiến-trúc-dự-án)
+- [📦 Hướng dẫn cài đặt](#-hướng-dẫn-cài-đặt)
+- [🔐 Phân quyền hệ thống](#-phân-quyền-hệ-thống)
+- [🚀 Lộ trình phát triển](#-lộ-trình-phát-triển)
+- [🤝 Đóng góp](#-đóng-góp)
 
 ---
 
 ## 🎯 Giới thiệu
 
-Website quảng bá du lịch địa phương là một nền tảng **du lịch thông minh** giúp:
+Dự án **Website Quảng Bá Du Lịch Khánh Hòa** được xây dựng nhằm cung cấp một giải pháp toàn diện cho du khách khi đến với "Xứ Trầm, Biển Yến". Không chỉ dừng lại ở việc cung cấp thông tin, hệ thống còn tích hợp trí tuệ nhân tạo (AI) và bản đồ trực quan để mang lại trải nghiệm cá nhân hóa tốt nhất.
 
-- ✅ Quảng bá điểm du lịch, ẩm thực, lưu trú địa phương
-- ✅ Tư vấn lịch trình du lịch tự động bằng AI
-- ✅ Ước tính chi phí chuyến đi chi tiết
-- ✅ Hiển thị bản đồ và lộ trình di chuyển
-- ✅ Cá nhân hóa trải nghiệm theo sở thích người dùng
-- ✅ Định hướng du lịch xanh và bền vững
-
-### 🎯 Mục tiêu dự án
-
-| Mục tiêu | Mô tả |
-|----------|-------|
-| **Quảng bá địa phương** | Giới thiệu điểm đến, văn hóa, ẩm thực độc đáo |
-| **Hỗ trợ du khách** | Tìm kiếm thông tin nhanh chóng, dễ dàng |
-| **AI tư vấn** | Gợi ý lịch trình thông minh theo sở thích |
-| **Trực quan hóa** | Google Maps hiển thị bản đồ và lộ trình |
-| **Cá nhân hóa** | Trải nghiệm phù hợp với từng người dùng |
-| **Du lịch xanh** | Khuyến khích du lịch bền vững |
+**Giá trị cốt lõi:**
+- 🏝️ **Quảng bá:** Giới thiệu sâu rộng về các địa danh, ẩm thực và văn hóa đặc sắc của Khánh Hòa.
+- 🤖 **Thông minh:** Chatbot AI tư vấn lịch trình dựa trên sở thích và ngân sách người dùng.
+- 🗺️ **Trực quan:** Tích hợp Google Maps API để quản lý tọa độ và lộ trình di chuyển.
+- 📊 **Tiện ích:** Công cụ ước tính chi phí chi tiết, giúp du khách chủ động tài chính.
 
 ---
 
-## ✨ Tính năng
+## ✨ Tính năng nổi bật
 
-### 🏠 Dành cho tất cả người dùng (Guest & User)
+### 🗺️ Dành cho Du khách (Guest & User)
+- **Khám phá đa dạng:** Tìm kiếm địa điểm du lịch, món ăn đặc sản và cơ sở lưu trú (khách sạn, homestay).
+- **Trợ lý AI (Gemini):** Chatbot hỗ trợ giải đáp thắc mắc, gợi ý lịch trình 1 ngày/3 ngày hoặc theo yêu cầu đặc biệt.
+- **Bản đồ tương tác:** Xem vị trí chính xác trên Google Maps, chỉ đường và tính toán khoảng cách.
+- **Ước tính chi phí:** Hệ thống tự động tính toán tổng ngân sách dựa trên các địa điểm đã chọn.
+- **Tin tức & Sự kiện:** Cập nhật các bài báo, sự kiện văn hóa mới nhất về du lịch tỉnh nhà.
 
-- 🗺️ **Xem danh sách địa điểm du lịch** - Danh mục theo loại hình
-- 🍜 **Khám phá ẩm thực địa phương** - Món ăn, quán ăn nổi tiếng
-- 🏨 **Tìm kiếm lưu trú** - Homestay, khách sạn, resort
-- 🤖 **Chatbot AI tư vấn** - Hỏi đáp tự nhiên về du lịch
-- 💰 **Ước tính chi phí** - Tính toán ngân sách chuyến đi
-- 📍 **Bản đồ Google Maps** - Hiển thị điểm đến và lộ trình
-- 🛣️ **Chỉ đường** - Khoảng cách và thời gian di chuyển
+### 👤 Dành cho Thành viên (Registered User)
+- **Quản lý hành trình:** Lưu trữ các lịch trình yêu thích để xem lại sau này.
+- **Lịch sử tư vấn:** Lưu vết các cuộc hội thoại với AI để tiếp tục hành trình đang dang dở.
+- **Cá nhân hóa:** Hồ sơ người dùng lưu lại sở thích để AI đưa ra các gợi ý chính xác hơn.
 
-### 👤 Dành cho User đã đăng ký
-
-- 💾 **Lưu lịch trình yêu thích** - Truy cập lại bất cứ lúc nào
-- 📜 **Xem lịch sử chat** - Theo dõi các cuộc tư vấn trước đó
-- 🎯 **AI cá nhân hóa** - Gợi ý dựa trên sở thích đã lưu
-- ⭐ **Đánh giá địa điểm** - Chia sẻ trải nghiệm
-
-### 🔑 Dành cho Admin
-
-- ➕ **Quản lý địa điểm** - Thêm, sửa, xóa điểm du lịch
-- 🖼️ **Upload hình ảnh** - Quản lý thư viện ảnh
-- 💵 **Cập nhật chi phí** - Dữ liệu tham khảo cho AI
-- 📊 **Thống kê** - Xem báo cáo sử dụng hệ thống
-- 👥 **Quản lý người dùng** - Danh sách user và hoạt động
+### 🔑 Dành cho Quản lý (Admin)
+- **Dashboard quản trị:** Thống kê tổng quan về dữ liệu hệ thống.
+- **Quản lý nội dung:** Thêm/sửa/xóa địa điểm, danh mục, bài viết tin tức một cách linh hoạt.
+- **Quản lý người dùng:** Kiểm soát danh sách thành viên và phân quyền truy cập.
+- **Tự động hóa dữ liệu:** Công cụ import dữ liệu từ file markdown/template vào hệ thống nhanh chóng.
 
 ---
 
 ## 🛠️ Công nghệ sử dụng
 
 ### Frontend
-
-```
-HTML5, CSS3, JavaScript (ES6+)
-Bootstrap 5 - Responsive UI
-jQuery - DOM manipulation
-Google Maps JavaScript API
-```
+- **React 18** (TypeScript, Vite)
+- **Tailwind CSS / Vanilla CSS** - Giao diện hiện đại, responsive.
+- **Google Maps JavaScript API** - Hiển thị bản đồ và chỉ đường.
 
 ### Backend
+- **Python 3.10+** (Flask Framework)
+- **SQLAlchemy** - ORM quản lý cơ sở dữ liệu.
+- **Alembic/Flask-Migrate** - Quản lý migration.
+- **Flask-JWT-Extended** - Bảo mật token.
 
-```
-Python 3.8+
-Flask - Web framework
-Flask-SQLAlchemy - ORM
-Flask-Login - Authentication
-Flask-CORS - API security
-```
+### Cơ sở dữ liệu & DevOps
+- **PostgreSQL** - Database chính cho production.
+- **Docker & Docker Compose** - Đóng gói toàn bộ ứng dụng.
+- **Nginx** - Reverse proxy serving frontend & media.
 
-### AI & Machine Learning
+---
 
-```
-OpenAI API / Google AI API - Chatbot & NLP
-Prompt Engineering - AI optimization
-Python AI libraries
-```
+## 🏗️ Kiến trúc dự án
 
-### Database
-
-```
-SQLite (Development)
-MySQL / PostgreSQL (Production)
-```
-
-### APIs
-
-```
-Google Maps JavaScript API - Bản đồ
-Google Places API - Thông tin địa điểm
-Google Directions API - Tuyến đường
-Google Geocoding API - Tọa độ
-OpenAI API - AI chatbot
+```bash
+website_dulichkhanhhoa/
+├── backend/               # Flask API
+│   ├── app/               # Models, Routes, Services
+│   ├── static/uploads/    # Thư viện hình ảnh
+│   └── manage.py          # Lệnh CLI quản lý
+├── frontend/              # React SPA
+│   ├── src/
+│   │   ├── pages/         # Guest, User, Admin Pages
+│   │   ├── components/    # Reusable components
+│   │   └── services/      # Axios API calls
+├── docker-compose.yml     # Quản lý Docker services
+└── README.md
 ```
 
 ---
 
-## 🏗️ Kiến trúc hệ thống
+## 📦 Hướng dẫn cài đặt
 
-### Mô hình tổng quan
-
-```
-┌─────────────┐
-│   Browser   │ (HTML/CSS/JS + Google Maps)
-└──────┬──────┘
-       │ HTTP/HTTPS
-       ↓
-┌─────────────┐
-│ Flask App   │ (Routes, Business Logic)
-└──────┬──────┘
-       │
-   ────┼────────────────────
-   │   │        │          │
-   ↓   ↓        ↓          ↓
-┌────┐ ┌────┐ ┌────┐  ┌────────┐
-│ DB │ │ AI │ │Maps│  │Session │
-└────┘ └────┘ └────┘  └────────┘
-```
-
-
-
----
-
-## 📦 Cài đặt
-
-### Yêu cầu hệ thống
-
-- Python 3.8 trở lên
-- pip hoặc pipenv
-- Git
-
-### Các bước cài đặt
-
-1. **Clone repository**
+### 1. Triển khai nhanh với Docker
+Gõ các lệnh sau tại thư mục gốc của dự án:
 
 ```bash
-git clone https://github.com/your-username/tourism-website.git
-cd tourism-website
-```
+# Clone và chuyển vào thư mục dự án
+git clone https://github.com/your-username/website_dulichkhanhhoa.git
+cd website_dulichkhanhhoa
 
-2. **Tạo virtual environment**
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-3. **Cài đặt dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-4. **Cấu hình file .env**
-
-```bash
+# Tạo file môi trường
 cp .env.example .env
-# Chỉnh sửa .env với API keys của bạn
-```
 
-5. **Chạy migration**
-
-```bash
-make db-upgrade
-```
-
-`Makefile` sẽ tự ưu tiên `.venv/bin/python`, nếu không có sẽ fallback sang `python3`.
-
-Nếu muốn đồng bộ lại tài khoản admin theo `.env` hiện tại, dùng `make sync-admin`.
-
-6. **Seed dữ liệu nền**
-
-```bash
-make seed-baseline
-```
-
-7. **Chạy ứng dụng**
-
-```bash
-make run-backend
-```
-
-Truy cập: `http://localhost:5000`
-
-Hoặc nếu muốn chạy liền một mạch theo flow production local:
-
-```bash
-make bootstrap
-```
-
----
-
-## ⚙️ Cấu hình
-
-### File `.env`
-
-```env
-# Flask
-SECRET_KEY=your-secret-key-here
-FLASK_ENV=development
-
-# Database
-DATABASE_URL=sqlite:///tourism.db
-
-# OpenAI API
-GEMINI_API_KEY=.....
-
-# Google Maps API
-GOOGLE_MAPS_API_KEY=your-google-maps-key-here
-
-# Admin Account
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=secure-password
-```
-
-
-### Docker production flow
-
-- Lần deploy đầu, backend container sẽ tự chạy `python manage.py bootstrap-production`
-- Lệnh này gồm 3 bước: chờ DB sẵn sàng → `db upgrade` → `seed-baseline`
-- `seed-baseline` chỉ tạo dữ liệu nền idempotent: 3 category mặc định và tài khoản admin nếu chưa tồn tại
-- Không tự seed dữ liệu demo vào production
-
-```bash
+# Khởi chạy hệ thống (Frontend, Backend, Database, Nginx)
 docker compose up -d --build
 ```
 
-Nếu chỉ muốn chạy backend stack để kiểm tra:
-
+### 2. Khởi tạo dữ liệu (Lần đầu)
 ```bash
-make docker-backend
-```
+# Chạy migration database
+docker exec website_dulichkhanhhoa-backend-1 python manage.py db upgrade
 
-Các lệnh vận hành nhanh khác:
-
-```bash
-make help
-make docker-up
-make docker-logs-backend
-make docker-down
-```
-
-### Lấy API Keys
-
-**OpenAI API:**
-1. Truy cập https://platform.openai.com/
-2. Tạo tài khoản và API key
-3. Copy key vào `.env`
-
-**Google Maps API:**
-1. Truy cập https://console.cloud.google.com/
-2. Tạo project mới
-3. Bật các API:
-   - Maps JavaScript API
-   - Places API
-   - Directions API
-   - Geocoding API
-4. Tạo API key và copy vào `.env`
-
----
-
-## 🚀 Sử dụng
-
-### Dành cho Guest (Khách vãng lai)
-
-1. Truy cập trang chủ
-2. Xem danh sách địa điểm du lịch
-3. Chat với AI để được tư vấn lịch trình
-4. Xem bản đồ và ước tính chi phí
-5. *(Tùy chọn)* Đăng ký để lưu lịch trình
-
-### Dành cho User đã đăng ký
-
-1. Đăng nhập vào hệ thống
-2. Sử dụng đầy đủ tính năng như Guest
-3. **Thêm:** Lưu lịch trình yêu thích
-4. **Thêm:** Xem lại lịch sử chat
-5. **Thêm:** Nhận gợi ý cá nhân hóa
-
-### Dành cho Admin
-
-1. Đăng nhập trang quản trị `/admin`
-2. Thêm địa điểm mới:
-   - Nhập thông tin (tên, mô tả, địa chỉ)
-   - Upload hình ảnh
-   - Nhập chi phí tham khảo
-   - Tọa độ tự động từ địa chỉ
-3. Quản lý nội dung
-4. Xem thống kê
-
----
-
-## 🔌 API Endpoints
-
-### Authentication
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| POST | `/api/auth/register` | Đăng ký tài khoản | No |
-| POST | `/api/auth/login` | Đăng nhập | No |
-| POST | `/api/auth/logout` | Đăng xuất | Yes |
-
-### Places
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| GET | `/api/places` | Danh sách địa điểm | No |
-| GET | `/api/places/<id>` | Chi tiết địa điểm | No |
-| POST | `/api/places` | Thêm địa điểm | Admin |
-| PUT | `/api/places/<id>` | Cập nhật | Admin |
-| DELETE | `/api/places/<id>` | Xóa | Admin |
-
-### AI Chatbot
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| POST | `/api/ai/chat` | Chat với AI | No |
-| POST | `/api/ai/itinerary` | Tạo lịch trình | No |
-| POST | `/api/ai/suggest` | Gợi ý địa điểm | No |
-
-### Maps
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| POST | `/api/maps/route` | Tính lộ trình | No |
-| POST | `/api/maps/geocode` | Lấy tọa độ | Admin |
-
-### User Dashboard
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| GET | `/api/user/itineraries` | Lịch trình đã lưu | User |
-| POST | `/api/user/itineraries` | Lưu lịch trình | User |
-| GET | `/api/user/chat-history` | Lịch sử chat | User |
-
----
-
-## 👥 Phân quyền
-
-### 🌐 Guest (Khách vãng lai)
-
-- ✅ Xem tất cả địa điểm
-- ✅ Chat AI tư vấn
-- ✅ Xem bản đồ
-- ❌ Không lưu được lịch trình
-- ❌ Không có lịch sử chat
-
-### 👤 User (Đã đăng ký)
-
-- ✅ Tất cả quyền của Guest
-- ✅ **Lưu lịch trình yêu thích**
-- ✅ **Xem lịch sử chat**
-- ✅ **AI cá nhân hóa**
-- ✅ Đánh giá địa điểm
-
-### 🔑 Admin
-
-- ✅ Tất cả quyền của User
-- ✅ **Quản lý địa điểm**
-- ✅ **Upload hình ảnh**
-- ✅ **Xem thống kê**
-- ✅ **Quản lý người dùng**
-
----
-
-## 📸 Screenshots
-
-*(Thêm screenshots của dự án tại đây)*
-
-```
-[Trang chủ]  [Danh sách địa điểm]  [AI Chatbot]  [Google Maps]  [Admin Panel]
+# Tạo dữ liệu nền tàng (Categories, Admin account)
+docker exec website_dulichkhanhhoa-backend-1 python manage.py seed-baseline
 ```
 
 ---
 
-## 🗺️ Roadmap
+## 🔐 Phân quyền hệ thống
 
-### Phase 1 - MVP (Hiện tại)
-- [x] Hệ thống authentication cơ bản
-- [x] Quản lý địa điểm
-- [x] AI chatbot tư vấn
-- [x] Google Maps integration
-- [x] Ước tính chi phí
+| Tính năng | Guest | User | Admin |
+| :--- | :---: | :---: | :---: |
+| Xem địa điểm/Tin tức | ✅ | ✅ | ✅ |
+| Chat với AI | ✅ | ✅ | ✅ |
+| Ước tính chi phí | ✅ | ✅ | ✅ |
+| Lưu lịch trình yêu thích | ❌ | ✅ | ✅ |
+| Quản lý dữ liệu hệ thống | ❌ | ❌ | ✅ |
+| Quản lý thành viên | ❌ | ❌ | ✅ |
 
-### Phase 2 - Tính năng nâng cao
-- [ ] Đa ngôn ngữ (Tiếng Việt, English)
-- [ ] Đánh giá và review
-- [ ] Tích hợp thanh toán
-- [ ] Đặt tour online
-- [ ] Ứng dụng mobile (React Native)
+---
 
-### Phase 3 - AI & ML
-- [ ] Machine Learning cá nhân hóa
-- [ ] Phân tích sentiment review
-- [ ] Dự đoán xu hướng du lịch
-- [ ] Chatbot đa ngôn ngữ
+## 🚀 Lộ trình phát triển
 
-### Phase 4 - Mở rộng
-- [ ] Kết nối doanh nghiệp địa phương
-- [ ] Hệ thống đối tác
-- [ ] API public cho third-party
-- [ ] Social features (chia sẻ lịch trình)
+- [x] **Giai đoạn 1:** Xây dựng Core API và UI cơ bản.
+- [x] **Giai đoạn 2:** Tích hợp AI Gemini và Google Maps.
+- [/] **Giai đoạn 3:** Hoàn thiện hệ thống quản lý CMS & Tin tức.
+- [ ] **Giai đoạn 4:** Triển khai Đa ngôn ngữ.
+- [ ] **Giai đoạn 5:** Phát triển ứng dụng Mobile (React Native).
 
 ---
 
 ## 🤝 Đóng góp
 
-Mọi đóng góp đều được chào đón! Vui lòng làm theo các bước:
-
-1. Fork repository
-2. Tạo branch mới (`git checkout -b feature/AmazingFeature`)
-3. Commit thay đổi (`git commit -m 'Add some AmazingFeature'`)
-4. Push lên branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
-
-### Coding Guidelines
-
-- Sử dụng PEP 8 cho Python code
-- Comment code rõ ràng
-- Viết unit tests cho features mới
-- Cập nhật documentation
+1. Fork dự án.
+2. Tạo nhánh (`git checkout -b feature/NewFeature`).
+3. Commit (`git commit -m 'Add NewFeature'`).
+4. Push (`git push origin feature/NewFeature`).
+5. Tạo Pull Request.
 
 ---
 
-## 📝 License
+## 📝 Giấy phép (License)
 
-Dự án này được phát hành dưới giấy phép MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
-
----
-
-## 📞 Liên hệ
-
-- **Email**: your-email@example.com
-- **Website**: https://your-website.com
-- **Facebook**: https://facebook.com/your-page
+Dự án này được cấp phép theo MIT License.
 
 ---
-
-## 🙏 Cảm ơn
-
-- [Flask](https://flask.palletsprojects.com/) - Web framework
-- [Gemini]
-- [Google Maps Platform](https://developers.google.com/maps) - Maps API
-- [Bootstrap](https://getbootstrap.com/) - UI framework
-
----
-
-**Made with ❤️ for local tourism**
+**Phát triển với ❤️ cho du lịch Khánh Hòa**

@@ -24,7 +24,7 @@ const NewsList: React.FC = () => {
         fetchPosts();
     }, []);
 
-    const filteredPosts = posts.filter(post => 
+    const filteredPosts = posts.filter(post =>
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.content.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -38,8 +38,8 @@ const NewsList: React.FC = () => {
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">Tin tức & Review</h1>
                         <p className="text-gray-600 text-lg">Những trải nghiệm du lịch thực tế từ cộng đồng.</p>
                     </div>
-                    <Link 
-                        to="/news/create" 
+                    <Link
+                        to="/news/create"
                         className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 group"
                     >
                         <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
@@ -85,12 +85,12 @@ const NewsList: React.FC = () => {
                                             alt={post.title}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
                                             <span className="text-white font-semibold">Đọc tiếp bài viết</span>
                                         </div>
                                     </Link>
-                                    
-                                    <div className="p-6 flex flex-col flex-grow">
+
+                                    <div className="p-6 flex flex-col grow">
                                         <div className="flex items-center text-xs text-gray-500 mb-3 gap-4">
                                             <span className="flex items-center">
                                                 <Calendar className="w-3 h-3 mr-1" />
@@ -101,17 +101,17 @@ const NewsList: React.FC = () => {
                                                 {post.author_name}
                                             </span>
                                         </div>
-                                        
+
                                         <Link to={`/news/${post.id}`} className="block mb-4">
                                             <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
                                                 {post.title}
                                             </h3>
                                         </Link>
-                                        
-                                        <p className="text-gray-600 line-clamp-3 mb-6 flex-grow">
+
+                                        <p className="text-gray-600 line-clamp-3 mb-6 grow">
                                             {post.content}
                                         </p>
-                                        
+
                                         <div className="flex items-center justify-between pt-6 border-t border-gray-50 mt-auto">
                                             <div className="flex items-center gap-4">
                                                 <div className="flex items-center text-gray-500">
@@ -141,7 +141,7 @@ const NewsList: React.FC = () => {
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900">Không tìm thấy bài viết nào</h3>
                         <p className="text-gray-500 mt-2">Hãy thử đổi từ khóa tìm kiếm khác.</p>
-                        <button 
+                        <button
                             onClick={() => setSearchTerm('')}
                             className="mt-6 text-blue-600 font-bold hover:underline"
                         >
