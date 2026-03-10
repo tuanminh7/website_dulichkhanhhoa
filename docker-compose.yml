@@ -80,6 +80,18 @@ services:
     networks:
       - app-network
       - ${LETSENCRYPT_PATH:-./frontend/dev-certs}:/etc/letsencrypt:ro
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ~/webapp/uploads:/var/www/uploads:ro
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
 
 volumes:
   postgres_data:

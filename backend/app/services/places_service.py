@@ -252,15 +252,10 @@ class PlacesService:
     @staticmethod
     def get_place(place_id):
         try:
-            location = Location.query.get_or_404(place_id)
-            data = location.to_dict()
-            # Thêm thông tin category vào kết quả trả về
-            if location.category:
-                data['category'] = location.category.to_dict()
-            return data, 200
-        except Exception as e:
-            return {'error': str(e)}, 500
-        
+            cache_key = PlacesService._build_place_detail_cache_key(place_id)
+            cached_payload = PlacesService._cache_get_json(cache_key)
+            if cached_payload is not None:
+                return cached_payload, 200
 
             payload = Location.query.get_or_404(place_id).to_dict()
             PlacesService._cache_set_json(cache_key, payload, ttl=300)

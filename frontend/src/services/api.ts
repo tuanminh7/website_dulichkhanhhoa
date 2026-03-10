@@ -115,55 +115,73 @@ api.interceptors.response.use(
 );
 
 export const locationService = {
-    getAll: (params?: Record<string, unknown>) => getCached<Location[] | { places: Location[] }>('/locations', { params }).then((response) => ({
-        ...response,
-        data: Array.isArray(response.data) ? response.data : (response.data.places ?? []),
-    })),
-    getById: (id: number) => getCached<Location>(`/locations/${id}`),
-    create: async (data: FormData | Record<string, unknown>) => {
-        const response = await api.post<{ message: string; place: Location }>('/locations', data);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
-    update: async (id: number, data: FormData | Record<string, unknown>) => {
-        const response = await api.put<{ message: string; place: Location }>(`/locations/${id}`, data);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
-    delete: async (id: number) => {
-        const response = await api.delete(`/locations/${id}`);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
+    // getAll: (params?: Record<string, unknown>) => getCached<Location[] | { places: Location[] }>('/locations', { params }).then((response) => ({
+    //     ...response,
+    //     data: Array.isArray(response.data) ? response.data : (response.data.places ?? []),
+    // })),
+    // getById: (id: number) => getCached<Location>(`/locations/${id}`),
+    // create: async (data: FormData | Record<string, unknown>) => {
+    //     const response = await api.post<{ message: string; place: Location }>('/locations', data);
+    //     invalidateCache(/GET:\/locations/);
+    //     return response;
+    // },
+    // update: async (id: number, data: FormData | Record<string, unknown>) => {
+    //     const response = await api.put<{ message: string; place: Location }>(`/locations/${id}`, data);
+    //     invalidateCache(/GET:\/locations/);
+    //     return response;
+    // },
+    // delete: async (id: number) => {
+    //     const response = await api.delete(`/locations/${id}`);
+    //     invalidateCache(/GET:\/locations/);
+    //     return response;
+    // },
+};
+
+// export const categoryService = {
+//     getAll: () => getCached<Category[]>('/locations/categories'),
+//     getById: (id: number) => getCached<Category>(`/locations/categories/${id}`),
+//     create: async (data: Partial<Category>) => {
+//         const response = await api.post<Category>('/locations/categories', data);
+//         invalidateCache(/GET:\/locations\/categories/);
+//         invalidateCache(/GET:\/locations/);
+//         return response;
+//     },
+//     update: async (id: number, data: Partial<Category>) => {
+//         const response = await api.put<Category>(`/locations/categories/${id}`, data);
+//         invalidateCache(/GET:\/locations\/categories/);
+//         invalidateCache(/GET:\/locations/);
+//         return response;
+//     },
+//     delete: async (id: number) => {
+//         const response = await api.delete(`/locations/categories/${id}`);
+//         invalidateCache(/GET:\/locations\/categories/);
+//         invalidateCache(/GET:\/locations/);
+//         return response;
+//     },
+// };
+
+export const dishService = {
+    // getAll: () => getCached<Dish[]>('/dishes'),
+    // getById: (id: number) => getCached<Dish>(`/dishes/${id}`),
+    getAll: (params?: any) => api.get<{ places: Location[], total: number, pages: number, current_page: number }>('/locations', { params }),
+    getById: (id: number) => api.get<Location>(`/locations/${id}`),
+    create: (data: any) => api.post<Location>('/locations', data),
+    update: (id: number, data: any) => api.put<Location>(`/locations/${id}`, data),
+    delete: (id: number) => api.delete(`/locations/${id}`),
 };
 
 export const categoryService = {
-    getAll: () => getCached<Category[]>('/locations/categories'),
-    getById: (id: number) => getCached<Category>(`/locations/categories/${id}`),
-    create: async (data: Partial<Category>) => {
-        const response = await api.post<Category>('/locations/categories', data);
-        invalidateCache(/GET:\/locations\/categories/);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
-    update: async (id: number, data: Partial<Category>) => {
-        const response = await api.put<Category>(`/locations/categories/${id}`, data);
-        invalidateCache(/GET:\/locations\/categories/);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
-    delete: async (id: number) => {
-        const response = await api.delete(`/locations/categories/${id}`);
-        invalidateCache(/GET:\/locations\/categories/);
-        invalidateCache(/GET:\/locations/);
-        return response;
-    },
+    getAll: () => api.get<Category[]>('/locations/categories'),
+    getById: (id: number) => api.get<Category>(`/locations/categories/${id}`),
+    create: (data: Partial<Category>) => api.post<Category>('/locations/categories', data),
+    update: (id: number, data: Partial<Category>) => api.put<Category>(`/locations/categories/${id}`, data),
+    delete: (id: number) => api.delete(`/locations/categories/${id}`),
 };
 
-export const dishService = {
-    getAll: () => getCached<Dish[]>('/dishes'),
-    getById: (id: number) => getCached<Dish>(`/dishes/${id}`),
-};
+// export const dishService = {
+//     getAll: () => api.get<Dish[]>('/locations/dishes'),
+//     getById: (id: number) => api.get<Dish>(`/locations/dishes/${id}`),
+// };
 
 export const authService = {
     login: async (credentials: any) => {

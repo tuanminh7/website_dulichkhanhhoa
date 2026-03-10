@@ -87,7 +87,12 @@ class Location(db.Model):
         else:
             images_data = [image.to_dict() if hasattr(image, 'to_dict') else image for image in images_data]
 
-        return {
+    def to_dict(self):
+        primary_image = self.images.filter_by(is_primary=True).first()
+        if not primary_image:
+            primary_image = self.images.first()
+            
+        data = {
             'id': self.id,
             'category_id': self.category_id,
             'name': self.name,
@@ -99,8 +104,7 @@ class Location(db.Model):
             'status': self.status,
             'path': self.path,
             'map_url': self.map_url,
-            'category': category_data,
-            'images': images_data,
+            'images': [img.to_dict() for img in self.images.all()]
         }
         
         # Include category info if loaded
