@@ -32,7 +32,7 @@ const ManageLocations: React.FC = () => {
                 locationService.getAll(),
                 categoryService.getAll()
             ]);
-            setLocations(locRes.data.places);
+            setLocations(locRes.data);
             setCategories(catRes.data);
         } catch (error) {
             console.error('Error fetching admin data:', error);

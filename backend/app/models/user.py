@@ -7,7 +7,6 @@ from flask_login import UserMixin
 from app import db, login_manager
 
 
-
 def generate_uuid():
     return uuid4().hex
 
@@ -22,7 +21,7 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     avatar = db.Column(db.String(255))
     role = db.Column(db.Enum('GUEST', 'USER', 'ADMIN', name='user_roles'), default='USER')
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

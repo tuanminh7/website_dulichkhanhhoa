@@ -87,12 +87,7 @@ class Location(db.Model):
         else:
             images_data = [image.to_dict() if hasattr(image, 'to_dict') else image for image in images_data]
 
-    def to_dict(self):
-        primary_image = self.images.filter_by(is_primary=True).first()
-        if not primary_image:
-            primary_image = self.images.first()
-            
-        data = {
+        return {
             'id': self.id,
             'category_id': self.category_id,
             'name': self.name,
@@ -102,21 +97,17 @@ class Location(db.Model):
             'price_range_max': self.price_range_max,
             'rating_avg': self.rating_avg,
             'status': self.status,
-            'path': self.path,
-            'map_url': self.map_url,
-            'images': [img.to_dict() for img in self.images.all()]
+            'category': category_data,
+            'images': images_data,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
-        
-        # Include category info if loaded
-        if self.category:
-            data['category'] = self.category.to_dict()
-            
-        return data
 
     def to_dict(self):
         data = self.to_summary_dict()
         data['opening_hours'] = self._serialize_opening_hours()
-        data['images'] = self._serialize_images()
+        data['images'] = self._serialize_images() # Get all images for detail
+        data['map_url'] = self.map_url
+        data['path'] = self.path
         return data
 
 

@@ -210,7 +210,10 @@ class PlacesService:
             if not include_inactive:
                 query = query.filter(Location.status == 'ACTIVE')
             if category:
-                query = query.join(Category).filter(Category.name.ilike(f'%{category}%'))
+                query = query.join(Category).filter(or_(
+                    Category.type == category,
+                    Category.name.ilike(f'%{category}%')
+                ))
             if search:
                 search_term = f'%{search}%'
                 query = query.filter(or_(

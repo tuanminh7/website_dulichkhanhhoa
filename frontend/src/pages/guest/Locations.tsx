@@ -18,7 +18,7 @@ const Locations: React.FC = () => {
                     locationService.getAll({ status: 'ACTIVE' }),
                     categoryService.getAll()
                 ]);
-                setLocations(locRes.data.places);
+                setLocations(locRes.data as any);
                 setCategories(catRes.data);
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -30,9 +30,10 @@ const Locations: React.FC = () => {
     }, []);
 
     const filteredLocations = locations.filter(loc => {
+        if (!loc) return false;
         const matchesCategory = selectedCategory ? loc.category_id === selectedCategory : true;
-        const matchesSearch = loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            loc.address?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (loc.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (loc.address || '').toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
@@ -47,7 +48,7 @@ const Locations: React.FC = () => {
 
                 {/* Filters and Search */}
                 <div className="flex flex-col md:flex-row gap-6 mb-12">
-                    <div className="relative flex-grow">
+                    <div className="relative grow">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                             type="text"
@@ -87,51 +88,54 @@ const Locations: React.FC = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <AnimatePresence>
-                            {filteredLocations.map((loc) => (
-                                <motion.div
-                                    key={loc.id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all group border border-gray-100"
-                                >
-                                    <div className="relative h-64 overflow-hidden">
-                                        <img
-                                            src={loc.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544918877-460635b64a36?q=80&w=2070&auto=format&fit=crop'}
-                                            alt={loc.name}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        />
-                                        <div className="absolute top-4 left-4">
-                                            <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-blue-600 uppercase tracking-wider">
-                                                {categories.find(c => c.id === loc.category_id)?.name}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{loc.name}</h3>
-                                            <div className="flex items-center text-orange-500 bg-orange-50 px-2 py-1 rounded-lg">
-                                                <Star className="w-4 h-4 fill-current mr-1" />
-                                                <span className="font-bold text-sm">{loc.rating_avg.toFixed(1)}</span>
+                            {filteredLocations.map((loc) => {
+                                if (!loc) return null;
+                                return (
+                                    <motion.div
+                                        key={loc.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all group border border-gray-100"
+                                    >
+                                        <div className="relative h-64 overflow-hidden">
+                                            <img
+                                                src={loc.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544918877-460635b64a36?q=80&w=2070&auto=format&fit=crop'}
+                                                alt={loc.name}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            />
+                                            <div className="absolute top-4 left-4">
+                                                <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-blue-600 uppercase tracking-wider">
+                                                    {categories.find(c => c.id === loc.category_id)?.name}
+                                                </span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center text-gray-500 text-sm mb-6">
-                                            <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                                            <span className="line-clamp-1">{loc.address}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-6 border-t border-gray-50">
-                                            <div className="text-gray-900 font-bold">
-                                                {loc.price_range_min ? `${loc.price_range_min.toLocaleString()}đ+` : 'Miễn phí'}
+                                        <div className="p-6">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{loc.name}</h3>
+                                                <div className="flex items-center text-orange-500 bg-orange-50 px-2 py-1 rounded-lg">
+                                                    <Star className="w-4 h-4 fill-current mr-1" />
+                                                    <span className="font-bold text-sm">{loc.rating_avg.toFixed(1)}</span>
+                                                </div>
                                             </div>
-                                            <button className="text-blue-600 font-semibold inline-flex items-center group-hover:gap-2 transition-all">
-                                                Xem chi tiết <ArrowRight className="w-4 h-4 ml-1" />
-                                            </button>
+                                            <div className="flex items-center text-gray-500 text-sm mb-6">
+                                                <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                                                <span className="line-clamp-1">{loc.address}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-6 border-t border-gray-50">
+                                                <div className="text-gray-900 font-bold">
+                                                    {loc.price_range_min ? `${loc.price_range_min.toLocaleString()}đ+` : 'Miễn phí'}
+                                                </div>
+                                                <button className="text-blue-600 font-semibold inline-flex items-center group-hover:gap-2 transition-all">
+                                                    Xem chi tiết <ArrowRight className="w-4 h-4 ml-1" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
                         </AnimatePresence>
                     </div>
                 )}

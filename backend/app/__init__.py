@@ -184,6 +184,7 @@ def create_app(config_name=None):
     app.register_blueprint(dishes.bp)
     
     with app.app_context():
+        ensure_schema_compatibility()
         db.create_all()
         from app.models.user import User
         admin = User.query.filter_by(email=app.config['ADMIN_EMAIL']).first()

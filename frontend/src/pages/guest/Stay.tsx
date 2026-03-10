@@ -13,7 +13,7 @@ const Stay: React.FC = () => {
         const fetchData = async () => {
             try {
                 const res = await locationService.getAll({ category: 'STAY' });
-                setAccommodations(res.data.places);
+                setAccommodations(res.data as any);
             } catch (error) {
                 console.error('Error fetching stay data:', error);
             } finally {
@@ -23,10 +23,11 @@ const Stay: React.FC = () => {
         fetchData();
     }, []);
 
-    const filtered = accommodations.filter(acc =>
-        acc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        acc.address?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = accommodations.filter(acc => {
+        if (!acc) return false;
+        return acc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            acc.address?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -55,7 +56,9 @@ const Stay: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filtered.map((acc) => (
+                        {filtered.map((acc) => {
+                            if (!acc) return null;
+                            return (
                             <motion.div
                                 key={acc.id}
                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -101,7 +104,8 @@ const Stay: React.FC = () => {
                                     </div>
                                 </div>
                             </motion.div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 

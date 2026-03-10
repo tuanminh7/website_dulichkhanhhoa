@@ -1,16 +1,16 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { triggerLoading } from '../context/LoadingContext';
 import type {
-    Location,
     Category,
-    Dish,
-    ChatSession,
     ChatMessage,
-    User,
-    Review,
+    ChatSession,
     Favorite,
+    Location,
+    Dish,
     Post,
     Comment as PostComment,
+    Review,
+    User
 } from '../types';
 
 const API_BASE_URL = '/api';
@@ -115,26 +115,26 @@ api.interceptors.response.use(
 );
 
 export const locationService = {
-    // getAll: (params?: Record<string, unknown>) => getCached<Location[] | { places: Location[] }>('/locations', { params }).then((response) => ({
-    //     ...response,
-    //     data: Array.isArray(response.data) ? response.data : (response.data.places ?? []),
-    // })),
-    // getById: (id: number) => getCached<Location>(`/locations/${id}`),
-    // create: async (data: FormData | Record<string, unknown>) => {
-    //     const response = await api.post<{ message: string; place: Location }>('/locations', data);
-    //     invalidateCache(/GET:\/locations/);
-    //     return response;
-    // },
-    // update: async (id: number, data: FormData | Record<string, unknown>) => {
-    //     const response = await api.put<{ message: string; place: Location }>(`/locations/${id}`, data);
-    //     invalidateCache(/GET:\/locations/);
-    //     return response;
-    // },
-    // delete: async (id: number) => {
-    //     const response = await api.delete(`/locations/${id}`);
-    //     invalidateCache(/GET:\/locations/);
-    //     return response;
-    // },
+    getAll: (params?: Record<string, unknown>) => getCached<Location[] | { places: Location[] }>('/locations', { params }).then((response) => ({
+        ...response,
+        data: Array.isArray(response.data) ? response.data : (response.data.places ?? []),
+    })),
+    getById: (id: number) => getCached<Location>(`/locations/${id}`),
+    create: async (data: FormData | Record<string, unknown>) => {
+        const response = await api.post<{ message: string; place: Location }>('/locations', data);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
+    update: async (id: number, data: FormData | Record<string, unknown>) => {
+        const response = await api.put<{ message: string; place: Location }>(`/locations/${id}`, data);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
+    delete: async (id: number) => {
+        const response = await api.delete(`/locations/${id}`);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
 };
 
 // export const categoryService = {
@@ -163,7 +163,7 @@ export const locationService = {
 export const dishService = {
     // getAll: () => getCached<Dish[]>('/dishes'),
     // getById: (id: number) => getCached<Dish>(`/dishes/${id}`),
-    getAll: (params?: any) => api.get<{ places: Location[], total: number, pages: number, current_page: number }>('/locations', { params }),
+    getAll: () => api.get<Dish[]>('/dishes'),
     getById: (id: number) => api.get<Location>(`/locations/${id}`),
     create: (data: any) => api.post<Location>('/locations', data),
     update: (id: number, data: any) => api.put<Location>(`/locations/${id}`, data),

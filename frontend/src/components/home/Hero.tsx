@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin, Search } from 'lucide-react';
 import React from 'react';
+import TextType from '../ui/TextType/TextType';
 
 const Hero: React.FC = () => {
     return (
@@ -23,20 +24,27 @@ const Hero: React.FC = () => {
                     transition={{ duration: .8 }}
                     className="max-w-4xl"
                 >
-                    {/* <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-widest mb-10 backdrop-blur-md border border-blue-500/20">
-                        <Compass className="w-4 h-4 mr-2" />
-                        Khám phá xứ Trầm Hương
-                    </span> */}
-
 
                     <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
-                        Vẻ đẹp
+                        <TextType
+                            text={["vẻ đẹp", "khám phá", "du lịch"]}
+                            typingSpeed={75}
+                            pauseDuration={1500}
+                            showCursor
+                            cursorCharacter="_"
+                            deletingSpeed={50}
+                            variableSpeedEnabled={false}
+                            variableSpeedMin={60}
+                            variableSpeedMax={120}
+                            cursorBlinkDuration={0.5}
+                        />
+                        <br />
+                        {/* Vẻ đẹp
                         <br />
                         <span className="text-emerald-400">Tuyệt diệu</span>
-                        <br />
-                        của <span className="text-cyan-300">Khánh Hòa</span>
+                        <br /> */}
+                        <span className="text-cyan-300">Khánh Hòa</span>
                     </h1>
-
 
                     <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed font-medium">
                         Khám phá những bãi biển thiên đường, ẩm thực tinh túy và trải nghiệm dịch vụ du lịch thông minh bậc nhất.

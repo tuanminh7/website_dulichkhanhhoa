@@ -154,11 +154,10 @@ class GeminiAIService:
             self.generation_config = generation_config
             self.safety_settings = safety_settings
             
-            # Create model (system_instruction will be set per-call with knowledge base)
+            # Initial model creation
             self.model = genai.GenerativeModel(
                 model_name=self.model_name,
                 generation_config=generation_config,
-                system_instruction=self._get_system_instruction(),
                 safety_settings=safety_settings
             )
             

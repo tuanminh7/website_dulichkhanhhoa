@@ -226,6 +226,7 @@ def create_session():
         db.session.commit()
         return jsonify(chat_session.to_dict()), 201
     except Exception as e:
+        current_app.logger.error(f'AI route error: {str(e)}')
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
@@ -275,5 +276,6 @@ def delete_chat_session(session_id):
         db.session.commit()
         return jsonify({'message': 'Xóa thành công'})
     except Exception as e:
+        current_app.logger.error(f'AI route error: {str(e)}')
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

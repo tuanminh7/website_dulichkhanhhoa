@@ -21,6 +21,9 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ManageLocations = lazy(() => import('./pages/admin/ManageLocations'));
 const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const ManageCategories = lazy(() => import('./pages/admin/ManageCategories'));
+const NewsList = lazy(() => import('./pages/News/NewsList'));
+const NewsDetail = lazy(() => import('./pages/News/NewsDetail'));
+const CreatePost = lazy(() => import('./pages/News/CreatePost'));
 const ForgotPassword = lazy(() => import('./pages/guest/ForgotPassword'));
 
 const RouteFallback = () => (
@@ -48,6 +51,9 @@ function App() {
             <Route path="food" element={<Food />} />
             <Route path="stay" element={<Stay />} />
             <Route path="chatbot" element={<Chatbot />} />
+            <Route path="news" element={<NewsList />} />
+            <Route path="news/:id" element={<NewsDetail />} />
+            <Route path="news/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
             <Route path="costs" element={<CostEstimation />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
