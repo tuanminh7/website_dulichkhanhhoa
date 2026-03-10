@@ -251,8 +251,8 @@ export const newsService = {
     create: (data: FormData | Record<string, unknown>) => api.post<Post>('/news', data),
     addComment: (postId: string, content: string) => api.post<PostComment>(`/news/${postId}/comment`, { content }),
     replyComment: (postId: string, commentId: string, content: string) => api.post<PostComment>(`/news/${postId}/comment`, { content, parent_id: commentId }),
-    toggleLike: (postId: string) => api.post<{ message: string, liked: boolean }>(`/news/${postId}/like`),
-    toggleCommentLike: (postId: string, commentId: string) => api.post<{ message: string, liked: boolean }>(`/news/${postId}/comment/${commentId}/like`),
+    toggleLike: (postId: string) => api.post<{ message: string, liked: boolean, likes_count: number }>(`/news/${postId}/like`),
+    toggleCommentLike: (postId: string, commentId: string) => api.post<{ message: string, liked: boolean, likes_count: number }>(`/news/${postId}/comment/${commentId}/like`),
 };
 
 export const adminService = {
