@@ -42,8 +42,17 @@ def make_admin(user_id):
     return jsonify(result), status_code
 
 
+@bp.route('/users/create-admin', methods=['POST'])
+@jwt_admin_required
+def create_admin():
+    data = request.get_json() or {}
+    result, status_code = admin_service.create_admin(data)
+    return jsonify(result), status_code
+
+
 @bp.route('/analytics', methods=['GET'])
 @jwt_admin_required
 def get_analytics():
     result, status_code = admin_service.get_analytics()
     return jsonify(result), status_code
+

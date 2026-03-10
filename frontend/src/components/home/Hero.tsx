@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Search } from 'lucide-react';
 import React from 'react';
 import TextType from '../ui/TextType';
+import SplitText from '../ui/SplitText';
 
 const Hero: React.FC = () => {
     return (
@@ -24,7 +25,6 @@ const Hero: React.FC = () => {
                     transition={{ duration: .8 }}
                     className="max-w-4xl"
                 >
-
                     <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
                         <TextType
                             text={["vẻ đẹp tuyệt diệu", "khám phá", "du lịch"]}
@@ -42,7 +42,22 @@ const Hero: React.FC = () => {
                         <br />
                         <span className="text-emerald-400">Tuyệt diệu</span>
                         <br /> */}
-                        <span className="text-cyan-300">Khánh Hòa</span>
+                        <SplitText
+                            text="Khánh Hòa"
+                            className="font-semibold text-center text-cyan-300"
+                            delay={200}
+                            duration={1.2}
+                            ease="power3.out"
+                            splitType="chars"
+                            from={{ opacity: 0, y: 40 }}
+                            to={{ opacity: 1, y: 0 }}
+                            threshold={0.1}
+                            rootMargin="-200px"
+                            textAlign="center"
+
+                            showCallback={true}
+                        />
+                        {/* <span className="text-cyan-300">Khánh Hòa</span> */}
                     </h1>
 
                     <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed font-medium">

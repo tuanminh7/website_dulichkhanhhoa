@@ -135,6 +135,23 @@ export const locationService = {
         invalidateCache(/GET:\/locations/);
         return response;
     },
+    addImages: async (id: number, files: File[]) => {
+        const form = new FormData();
+        files.forEach(f => form.append('images[]', f));
+        const response = await api.post<{ message: string; images: any[] }>(`/locations/${id}/images`, form);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
+    deleteImage: async (locationId: number, imageId: number) => {
+        const response = await api.delete(`/locations/${locationId}/images/${imageId}`);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
+    setPrimaryImage: async (locationId: number, imageId: number) => {
+        const response = await api.put(`/locations/${locationId}/images/${imageId}/set-primary`);
+        invalidateCache(/GET:\/locations/);
+        return response;
+    },
 };
 
 // export const categoryService = {
@@ -199,6 +216,15 @@ export const authService = {
     },
 };
 
+export const userService = {
+    getProfile: () => api.get<User>('/user/profile'),
+    updateProfile: async (data: Partial<User>) => {
+        const response = await api.put<User>('/user/profile', data);
+        invalidateCache('GET:/auth/me:');
+        return response;
+    },
+};
+
 export const chatService = {
     getSessions: () => getCached<ChatSession[]>('/ai/sessions'),
     getSessionMessages: (sessionId: number) => getCached<ChatMessage[]>(`/ai/sessions/${sessionId}/messages`),
@@ -222,9 +248,11 @@ export const interactionService = {
 export const newsService = {
     getAll: (params?: any) => api.get<{ posts: Post[], total: number, pages: number, current_page: number }>('/news', { params }),
     getById: (id: string) => api.get<Post>(`/news/${id}`),
-    create: (data: any) => api.post<Post>('/news', data),
+    create: (data: FormData | Record<string, unknown>) => api.post<Post>('/news', data),
     addComment: (postId: string, content: string) => api.post<PostComment>(`/news/${postId}/comment`, { content }),
+    replyComment: (postId: string, commentId: string, content: string) => api.post<PostComment>(`/news/${postId}/comment`, { content, parent_id: commentId }),
     toggleLike: (postId: string) => api.post<{ message: string, liked: boolean }>(`/news/${postId}/like`),
+    toggleCommentLike: (postId: string, commentId: string) => api.post<{ message: string, liked: boolean }>(`/news/${postId}/comment/${commentId}/like`),
 };
 
 export const adminService = {
@@ -238,6 +266,12 @@ export const adminService = {
     },
     makeAdmin: async (userId: string) => {
         const response = await api.post(`/admin/users/${userId}/make-admin`);
+        invalidateCache('/admin/users');
+        invalidateCache('/admin/dashboard');
+        return response;
+    },
+    createAdmin: async (data: { fullname: string; email: string; password: string }) => {
+        const response = await api.post('/admin/users/create-admin', data);
         invalidateCache('/admin/users');
         invalidateCache('/admin/dashboard');
         return response;

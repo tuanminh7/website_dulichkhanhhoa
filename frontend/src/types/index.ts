@@ -143,7 +143,10 @@ export interface Comment {
     user_id: string;
     user_name: string;
     user_avatar?: string;
+    parent_id?: string;
     content: string;
+    likes_count: number;
+    replies?: Comment[];
     created_at: string;
 }
 

@@ -41,9 +41,14 @@ class Comment(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=generateUUID)
     post_id = db.Column(db.String(36), db.ForeignKey('posts.id'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    parent_id = db.Column(db.String(36), db.ForeignKey('post_comments.id'), nullable=True) # For nested replies
     content = db.Column(db.Text, nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships for nested replies
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic', cascade='all, delete-orphan')
+    likes = db.relationship('CommentLike', backref='comment', lazy='dynamic', cascade='all, delete-orphan')
     
     def to_dict(self):
         return {
@@ -52,9 +57,22 @@ class Comment(db.Model):
             'user_id': self.user_id,
             'user_name': self.user.fullname if self.user else "Unknown",
             'user_avatar': self.user.avatar if self.user else None,
+            'parent_id': self.parent_id,
             'content': self.content,
+            'likes_count': self.likes.count(),
             'created_at': self.created_at.isoformat()
         }
+
+class CommentLike(db.Model):
+    __tablename__ = 'comment_likes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    comment_id = db.Column(db.String(36), db.ForeignKey('post_comments.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('comment_id', 'user_id', name='_comment_user_like_uc'),)
 
 class Like(db.Model):
     __tablename__ = 'post_likes'

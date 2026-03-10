@@ -4,6 +4,7 @@ import MainLayout from './components/layout/MainLayout';
 import ScrollToTop from './components/layout/ScrollToTop';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import LoadingOverlay from './components/common/LoadingOverlay';
+import { Toaster } from 'react-hot-toast';
 
 const Home = lazy(() => import('./pages/guest/Home'));
 const Locations = lazy(() => import('./pages/guest/Locations'));
@@ -40,6 +41,7 @@ function App() {
     <>
       <ScrollToTop />
       <LoadingOverlay />
+      <Toaster position="top-right" />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<MainLayout />}>

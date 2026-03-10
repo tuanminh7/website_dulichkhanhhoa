@@ -82,29 +82,31 @@ const Food: React.FC = () => {
                                 if (!rest) return null;
                                 return (
                                     <div key={rest.id} className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 group">
-                                        <div className="h-48 relative overflow-hidden">
-                                            <img
-                                                src={rest.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070&auto=format&fit=crop'}
-                                                alt={rest.name}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            />
-                                        </div>
-                                        <div className="p-6">
-                                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{rest.name}</h3>
-                                            <div className="flex items-center text-gray-500 text-sm mb-4">
-                                                <MapPin className="w-4 h-4 mr-2" />
-                                                <span className="line-clamp-1">{rest.address}</span>
+                                        <Link to={`/locations/${rest.id}`} className="block h-full">
+                                            <div className="h-48 relative overflow-hidden">
+                                                <img
+                                                    src={rest.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070&auto=format&fit=crop'}
+                                                    alt={rest.name}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                />
                                             </div>
-                                            <div className="flex justify-between items-center">
-                                                <div className="flex items-center text-orange-500 font-bold">
-                                                    <Star className="w-4 h-4 fill-current mr-1" />
-                                                    {rest.rating_avg.toFixed(1)}
+                                            <div className="p-6">
+                                                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{rest.name}</h3>
+                                                <div className="flex items-center text-gray-500 text-sm mb-4">
+                                                    <MapPin className="w-4 h-4 mr-2" />
+                                                    <span className="line-clamp-1">{rest.address}</span>
                                                 </div>
-                                                <button className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all">
-                                                    <ArrowRight className="w-5 h-5" />
-                                                </button>
+                                                <div className="flex justify-between items-center">
+                                                    <div className="flex items-center text-orange-500 font-bold">
+                                                        <Star className="w-4 h-4 fill-current mr-1" />
+                                                        {rest.rating_avg.toFixed(1)}
+                                                    </div>
+                                                    <span className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all cursor-pointer">
+                                                        <ArrowRight className="w-5 h-5" />
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     </div>
                                 );
                             })

@@ -8,6 +8,7 @@ interface AuthContextType {
     loading: boolean;
     login: (credentials: any) => Promise<void>;
     logout: () => void;
+    updateUser: (newUser: User) => void;
     isAdmin: boolean;
 }
 
@@ -70,6 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         navigate('/');
     };
+    
+    const updateUser = (newUser: User) => {
+        setUser(newUser);
+    };
 
     return (
         <AuthContext.Provider value={{
@@ -77,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             loading,
             login,
             logout,
+            updateUser,
             isAdmin: user?.role === 'ADMIN'
         }}>
             {children}

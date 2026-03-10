@@ -3,6 +3,7 @@ import { locationService } from '../../services/api';
 import type { Location } from '../../types';
 import { MapPin, Star, Search, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const Stay: React.FC = () => {
     const [accommodations, setAccommodations] = useState<Location[]>([]);
@@ -65,44 +66,46 @@ const Stay: React.FC = () => {
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all group border border-gray-100"
                             >
-                                <div className="relative h-64 overflow-hidden">
-                                    <img
-                                        src={acc.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop'}
-                                        alt={acc.name}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                    <div className="absolute top-4 left-4">
-                                        <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-teal-600 uppercase tracking-wider flex items-center">
-                                            <ShieldCheck className="w-3 h-3 mr-1" /> Verified
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase">{acc.name}</h3>
-                                        <div className="flex items-center text-orange-500 bg-orange-50 px-2 py-1 rounded-lg">
-                                            <Star className="w-4 h-4 fill-current mr-1" />
-                                            <span className="font-bold text-sm">{acc.rating_avg.toFixed(1)}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center text-gray-500 text-sm mb-6">
-                                        <MapPin className="w-4 h-4 mr-2" />
-                                        <span className="line-clamp-1">{acc.address}</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-center pt-6 border-t border-gray-50">
-                                        <div>
-                                            <span className="text-gray-400 text-xs block mb-1">Giá từ</span>
-                                            <span className="text-gray-900 font-bold text-lg">
-                                                {acc.price_range_min ? `${acc.price_range_min.toLocaleString()}đ` : 'Liên hệ'}
+                                <Link to={`/locations/${acc.id}`} className="block h-full">
+                                    <div className="relative h-64 overflow-hidden">
+                                        <img
+                                            src={acc.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop'}
+                                            alt={acc.name}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
+                                        <div className="absolute top-4 left-4">
+                                            <span className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-teal-600 uppercase tracking-wider flex items-center">
+                                                <ShieldCheck className="w-3 h-3 mr-1" /> Verified
                                             </span>
-                                            <span className="text-gray-400 text-sm"> / đêm</span>
                                         </div>
-                                        <button className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors">
-                                            Đặt ngay
-                                        </button>
                                     </div>
-                                </div>
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors uppercase">{acc.name}</h3>
+                                            <div className="flex items-center text-orange-500 bg-orange-50 px-2 py-1 rounded-lg">
+                                                <Star className="w-4 h-4 fill-current mr-1" />
+                                                <span className="font-bold text-sm">{acc.rating_avg.toFixed(1)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-gray-500 text-sm mb-6">
+                                            <MapPin className="w-4 h-4 mr-2" />
+                                            <span className="line-clamp-1">{acc.address}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pt-6 border-t border-gray-50">
+                                            <div>
+                                                <span className="text-gray-400 text-xs block mb-1">Giá từ</span>
+                                                <span className="text-gray-900 font-bold text-lg">
+                                                    {acc.price_range_min ? `${acc.price_range_min.toLocaleString()}đ` : 'Liên hệ'}
+                                                </span>
+                                                <span className="text-gray-400 text-sm"> / đêm</span>
+                                            </div>
+                                            <span className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors inline-block cursor-pointer">
+                                                Đặt ngay
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
                             </motion.div>
                             );
                         })}

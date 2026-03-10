@@ -27,8 +27,8 @@ def get_post(post_id):
 @login_required
 def create_post():
     """Tạo bài viết mới"""
-    data = request.get_json()
-    result, status_code = NewsService.create_post(current_user.id, data)
+    data = request.form.to_dict() if not request.is_json else (request.get_json() or {})
+    result, status_code = NewsService.create_post(current_user.id, data, request.files)
     return jsonify(result), status_code
 
 
@@ -38,6 +38,13 @@ def add_comment(post_id):
     """Thêm bình luận vào bài viết"""
     data = request.get_json()
     result, status_code = NewsService.add_comment(post_id, current_user.id, data)
+    return jsonify(result), status_code
+
+@bp.route('/<string:post_id>/comment/<string:comment_id>/like', methods=['POST'])
+@login_required
+def toggle_comment_like(post_id, comment_id):
+    """Thích/Bỏ thích bình luận"""
+    result, status_code = NewsService.toggle_comment_like(comment_id, current_user.id)
     return jsonify(result), status_code
 
 @bp.route('/<string:post_id>/like', methods=['POST'])

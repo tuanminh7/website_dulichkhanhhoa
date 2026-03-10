@@ -115,23 +115,98 @@ class PlacesService:
         return f'places:categories:v{version}'
 
     @staticmethod
-    def _save_image(location, files):
-        file = files.get('image') or files.get('main_image')
-        if not file or not getattr(file, 'filename', ''):
+    def _save_multiple_images(location, files):
+        """Save multiple images. First image becomes primary if no primary exists."""
+        image_files = []
+
+        # Support both 'images[]' (multiple) and 'image'/'main_image' (single)
+        multi = files.getlist('images[]') if hasattr(files, 'getlist') else []
+        if multi:
+            image_files = [f for f in multi if getattr(f, 'filename', '')]
+        if not image_files:
+            single = files.get('image') or files.get('main_image')
+            if single and getattr(single, 'filename', ''):
+                image_files = [single]
+
+        if not image_files:
             return
-        if not PlacesService.allowed_file(file.filename):
-            raise ValueError('Định dạng ảnh không hợp lệ')
 
-        filename = secure_filename(file.filename)
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(upload_path)
+        has_primary = location.images.filter_by(is_primary=True).first() is not None
 
-        existing_primary = location.images.filter_by(is_primary=True).first()
-        if existing_primary:
-            existing_primary.is_primary = False
+        for idx, file in enumerate(image_files):
+            if not PlacesService.allowed_file(file.filename):
+                raise ValueError(f'Định dạng ảnh không hợp lệ: {file.filename}')
 
-        image = LocationImage(location=location, image_url=f'/uploads/{filename}', is_primary=True)
-        db.session.add(image)
+            filename = secure_filename(file.filename)
+            # Add unique prefix to avoid collisions
+            import time
+            unique_filename = f"{int(time.time() * 1000)}_{idx}_{filename}"
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(upload_path)
+
+            is_primary = (not has_primary and idx == 0)
+            image = LocationImage(
+                location=location,
+                image_url=f'/uploads/{unique_filename}',
+                is_primary=is_primary,
+            )
+            db.session.add(image)
+            if is_primary:
+                has_primary = True
+
+    @staticmethod
+    def add_images(place_id, files):
+        """Add additional images to an existing location."""
+        try:
+            location = Location.query.get_or_404(place_id)
+            PlacesService._save_multiple_images(location, files)
+            db.session.commit()
+            PlacesService._invalidate_place_caches()
+            return {'message': 'Thêm ảnh thành công', 'images': [img.to_dict() for img in location.images.all()]}, 200
+        except ValueError as e:
+            db.session.rollback()
+            return {'error': str(e)}, 400
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def delete_image(place_id, image_id):
+        """Delete a single image from a location."""
+        try:
+            image = LocationImage.query.filter_by(id=image_id, location_id=place_id).first_or_404()
+            was_primary = image.is_primary
+            db.session.delete(image)
+            db.session.flush()
+
+            # If deleted image was primary, promote the first remaining image
+            if was_primary:
+                remaining = LocationImage.query.filter_by(location_id=place_id).order_by(LocationImage.id.asc()).first()
+                if remaining:
+                    remaining.is_primary = True
+
+            db.session.commit()
+            PlacesService._invalidate_place_caches()
+            return {'message': 'Xóa ảnh thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def set_primary_image(place_id, image_id):
+        """Set a specific image as the primary image for a location."""
+        try:
+            # Remove current primary
+            LocationImage.query.filter_by(location_id=place_id, is_primary=True).update({'is_primary': False})
+            # Set new primary
+            image = LocationImage.query.filter_by(id=image_id, location_id=place_id).first_or_404()
+            image.is_primary = True
+            db.session.commit()
+            PlacesService._invalidate_place_caches()
+            return {'message': 'Đã đặt ảnh chính thành công', 'image': image.to_dict()}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
 
     @staticmethod
     def serialize_places_summary(places):
@@ -263,13 +338,7 @@ class PlacesService:
             return data, 200
         except Exception as e:
             return {'error': str(e)}, 500
-        
 
-            payload = Location.query.get_or_404(place_id).to_dict()
-            PlacesService._cache_set_json(cache_key, payload, ttl=300)
-            return payload, 200
-        except Exception as e:
-            return {'error': str(e)}, 500
 
     @staticmethod
     def create_place(data, files):
@@ -300,7 +369,7 @@ class PlacesService:
             )
             db.session.add(location)
             db.session.flush()
-            PlacesService._save_image(location, files)
+            PlacesService._save_multiple_images(location, files)
             db.session.commit()
             PlacesService._invalidate_place_caches()
             return {'message': 'Tạo địa điểm thành công', 'place': location.to_dict()}, 201
@@ -341,7 +410,7 @@ class PlacesService:
             if 'status' in data and data.get('status') in ('ACTIVE', 'INACTIVE'):
                 location.status = data.get('status')
 
-            PlacesService._save_image(location, files)
+            PlacesService._save_multiple_images(location, files)
             db.session.commit()
             PlacesService._invalidate_place_caches()
             return {'message': 'Cập nhật thành công', 'place': location.to_dict()}, 200

@@ -115,6 +115,35 @@ class AdminService:
             return {'error': str(e)}, 500
 
     @staticmethod
+    def create_admin(data):
+        try:
+            fullname = (data.get('fullname') or '').strip()
+            email = (data.get('email') or '').strip().lower()
+            password = data.get('password') or ''
+
+            if not fullname:
+                return {'error': 'Họ tên không được để trống'}, 400
+            if not email:
+                return {'error': 'Email không được để trống'}, 400
+            if not password or len(password) < 6:
+                return {'error': 'Mật khẩu phải có ít nhất 6 ký tự'}, 400
+
+            if User.query.filter_by(email=email).first():
+                return {'error': 'Email đã được sử dụng'}, 400
+
+            user = User(fullname=fullname, email=email, role='ADMIN', is_active=True)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            cache.delete(AdminService.DASHBOARD_CACHE_KEY)
+            return {'message': 'Tạo tài khoản admin thành công', 'user': user.to_dict()}, 201
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+
+
+    @staticmethod
     def get_analytics():
         try:
             def get_growth_last_year(model):

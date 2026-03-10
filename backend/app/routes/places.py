@@ -70,6 +70,41 @@ def delete_place(place_id):
     return jsonify(result), status_code
 
 
+@bp.route('/api/locations/<int:place_id>/images', methods=['POST'])
+@bp.route('/api/places/<int:place_id>/images', methods=['POST'])
+@jwt_required()
+def add_place_images(place_id):
+    auth_error = admin_required()
+    if auth_error:
+        return auth_error
+    result, status_code = PlacesService.add_images(place_id, request.files)
+    return jsonify(result), status_code
+
+
+@bp.route('/api/locations/<int:place_id>/images/<int:image_id>', methods=['DELETE'])
+@bp.route('/api/places/<int:place_id>/images/<int:image_id>', methods=['DELETE'])
+@jwt_required()
+def delete_place_image(place_id, image_id):
+    auth_error = admin_required()
+    if auth_error:
+        return auth_error
+    result, status_code = PlacesService.delete_image(place_id, image_id)
+    return jsonify(result), status_code
+
+
+@bp.route('/api/locations/<int:place_id>/images/<int:image_id>/set-primary', methods=['PUT'])
+@bp.route('/api/places/<int:place_id>/images/<int:image_id>/set-primary', methods=['PUT'])
+@jwt_required()
+def set_primary_place_image(place_id, image_id):
+    auth_error = admin_required()
+    if auth_error:
+        return auth_error
+    result, status_code = PlacesService.set_primary_image(place_id, image_id)
+    return jsonify(result), status_code
+
+
+
+
 @bp.route('/api/locations/<int:place_id>/reviews', methods=['GET'])
 @bp.route('/api/places/<int:place_id>/reviews', methods=['GET'])
 def get_reviews(place_id):

@@ -13,6 +13,7 @@ const NewsDetail: React.FC = () => {
     const [post, setPost] = useState<Post | null>(null);
     const [loading, setLoading] = useState(true);
     const [comment, setComment] = useState('');
+    const [replyingTo, setReplyingTo] = useState<{ id: string, name: string } | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [liked, setLiked] = useState(false);
 
@@ -52,8 +53,13 @@ const NewsDetail: React.FC = () => {
         
         setSubmitting(true);
         try {
-            await newsService.addComment(id, comment);
+            if (replyingTo) {
+                await newsService.replyComment(id, replyingTo.id, comment);
+            } else {
+                await newsService.addComment(id, comment);
+            }
             setComment('');
+            setReplyingTo(null);
             // Refresh post to get new comments
             const postRes = await newsService.getById(id);
             setPost(postRes.data);
@@ -61,6 +67,18 @@ const NewsDetail: React.FC = () => {
             console.error('Error adding comment:', error);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleCommentLike = async (commentId: string) => {
+        if (!id || !user) return;
+        try {
+            await newsService.toggleCommentLike(id, commentId);
+            // Refresh post to get updated count
+            const postRes = await newsService.getById(id);
+            setPost(postRes.data);
+        } catch (error) {
+            console.error('Error toggling comment like:', error);
         }
     };
 
@@ -139,11 +157,17 @@ const NewsDetail: React.FC = () => {
                             {user ? (
                                 <form onSubmit={handleComment} className="mb-12">
                                     <div className="relative">
+                                        {replyingTo && (
+                                            <div className="flex items-center justify-between bg-blue-50 px-4 py-2 rounded-t-2xl border border-b-0 border-blue-100/50">
+                                                <span className="text-sm text-blue-800 font-medium">Đang trả lời <strong>{replyingTo.name}</strong></span>
+                                                <button type="button" onClick={() => setReplyingTo(null)} className="text-blue-500 hover:text-blue-700 text-sm font-bold tracking-wide flex items-center gap-1">Hủy</button>
+                                            </div>
+                                        )}
                                         <textarea
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
-                                            placeholder="Chia sẻ cảm nghĩ của bạn..."
-                                            className="w-full p-6 bg-gray-50 border border-gray-100 rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px]"
+                                            placeholder={replyingTo ? `Viết câu trả lời cho ${replyingTo.name}...` : "Chia sẻ cảm nghĩ của bạn..."}
+                                            className={`w-full p-6 bg-gray-50 border border-gray-100 ${replyingTo ? 'rounded-b-3xl rounded-t-none' : 'rounded-3xl'} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[120px] shadow-sm`}
                                         />
                                         <button
                                             type="submit"
@@ -164,35 +188,89 @@ const NewsDetail: React.FC = () => {
                             )}
 
                             <div className="space-y-8">
-                                {post.comments?.map((c) => (
-                                    <div key={c.id} className="flex gap-4">
-                                        <div className="flex-shrink-0">
-                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg overflow-hidden shadow-md">
-                                                {c.user_avatar ? (
-                                                    <img src={c.user_avatar} alt={c.user_name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    c.user_name.charAt(0)
+                                    {post.comments?.map((c) => (
+                                        <div key={c.id} className="flex gap-4 group/comment">
+                                            <div className="shrink-0">
+                                                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg overflow-hidden shadow-md">
+                                                    {c.user_avatar ? (
+                                                        <img src={c.user_avatar} alt={c.user_name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        c.user_name.charAt(0)
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="grow">
+                                                <div className="bg-gray-50 p-6 rounded-[2.5em] rounded-tl-none border border-gray-100/50 shadow-sm relative">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <span className="font-bold text-gray-900">{c.user_name}</span>
+                                                        <span className="text-xs text-gray-400 font-medium">
+                                                            {new Date(c.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-700 leading-relaxed">{c.content}</p>
+                                                    {/* Floating Like Count if liked */}
+                                                    {c.likes_count > 0 && (
+                                                        <div className="absolute -bottom-3 -right-2 bg-white px-2 py-0.5 rounded-full shadow-md border border-gray-100 flex items-center gap-1.5 text-xs font-bold text-gray-600 z-10 transition-transform hover:scale-105">
+                                                            <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"><ThumbsUp className="w-2.5 h-2.5 text-white" /></div>
+                                                            {c.likes_count}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-2 ml-4 text-sm font-bold text-gray-500">
+                                                    <button onClick={() => handleCommentLike(c.id)} className="hover:text-blue-600 transition-colors">Thích</button>
+                                                    <button onClick={() => setReplyingTo({ id: c.id, name: c.user_name })} className="hover:text-blue-600 transition-colors">Phản hồi</button>
+                                                </div>
+
+                                                {/* Recursively Render Replies */}
+                                                {c.replies && c.replies.length > 0 && (
+                                                    <div className="mt-4 space-y-4">
+                                                        {c.replies.map(reply => (
+                                                            <div key={reply.id} className="flex gap-3 group/reply mt-4">
+                                                                <div className="shrink-0">
+                                                                    <div className="w-8 h-8 rounded-xl bg-linear-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden shadow-sm">
+                                                                         {reply.user_avatar ? (
+                                                                            <img src={reply.user_avatar} alt={reply.user_name} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            reply.user_name.charAt(0)
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grow">
+                                                                    <div className="bg-gray-50 p-4 rounded-[2em] rounded-tl-none border border-gray-100/50 shadow-sm relative">
+                                                                        <div className="flex justify-between items-center mb-1.5">
+                                                                            <span className="font-bold text-gray-900 text-sm">{reply.user_name}</span>
+                                                                            <span className="text-[11px] text-gray-400 font-medium">
+                                                                                {new Date(reply.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                                            </span>
+                                                                        </div>
+                                                                        <p className="text-gray-700 leading-relaxed text-sm">
+                                                                            <span className="font-semibold text-blue-600 opacity-80 hover:opacity-100 cursor-pointer transition-opacity mr-1">@{c.user_name}</span>
+                                                                             {reply.content}
+                                                                        </p>
+                                                                        {reply.likes_count > 0 && (
+                                                                            <div className="absolute -bottom-2 -right-2 bg-white px-2 py-0.5 rounded-full shadow-md border border-gray-100 flex items-center gap-1.5 text-xs font-bold text-gray-600 z-10">
+                                                                                <div className="w-3.5 h-3.5 rounded-full bg-blue-500 flex items-center justify-center"><ThumbsUp className="w-2 h-2 text-white" /></div>
+                                                                                {reply.likes_count}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 mt-1.5 ml-4 text-xs font-bold text-gray-500">
+                                                                        <button onClick={() => handleCommentLike(reply.id)} className="hover:text-blue-600 transition-colors">Thích</button>
+                                                                        <button onClick={() => setReplyingTo({ id: c.id, name: reply.user_name })} className="hover:text-blue-600 transition-colors">Phản hồi</button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex-grow">
-                                            <div className="bg-gray-50 p-6 rounded-[2rem] rounded-tl-none">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="font-bold text-gray-900">{c.user_name}</span>
-                                                    <span className="text-xs text-gray-500">
-                                                        {new Date(c.created_at).toLocaleDateString('vi-VN')}
-                                                    </span>
-                                                </div>
-                                                <p className="text-gray-700 leading-relaxed">{c.content}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                
-                                {(!post.comments || post.comments.length === 0) && (
-                                    <p className="text-center text-gray-500 py-8 italic">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
-                                )}
-                            </div>
+                                    ))}
+                                    
+                                    {(!post.comments || post.comments.length === 0) && (
+                                        <p className="text-center text-gray-500 py-8 italic bg-gray-50 rounded-3xl border border-dashed border-gray-200">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+                                    )}
+                                </div>
                         </section>
                     </div>
                 </motion.article>

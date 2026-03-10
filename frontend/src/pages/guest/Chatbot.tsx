@@ -16,6 +16,7 @@ const Chatbot: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isFetching = useRef(false);
     const isCreating = useRef(false);
+    const isInitialSessionCreation = useRef(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -33,8 +34,12 @@ const Chatbot: React.FC = () => {
     }, [user]);
 
     useEffect(() => {
-        if (currentSessionId) {
+        if (currentSessionId && !isInitialSessionCreation.current) {
             fetchMessages(currentSessionId);
+        }
+        // Reset the flag after use
+        if (isInitialSessionCreation.current) {
+            isInitialSessionCreation.current = false;
         }
     }, [currentSessionId]);
 
@@ -101,6 +106,7 @@ const Chatbot: React.FC = () => {
                 try {
                     // Use truncated first message as title
                     const title = input.length > 30 ? input.substring(0, 30) + '...' : input;
+                    isInitialSessionCreation.current = true;
                     const res = await chatService.createSession(title);
                     sessionId = res.data.id;
                     setCurrentSessionId(sessionId);
@@ -187,6 +193,10 @@ const Chatbot: React.FC = () => {
                         if (data.done && data.ai_message) {
                             didReceiveDone = true;
                             setMessages(prev => prev.map(m => (m.sender_type === 'AI' && (m.id === aiMessageId || !m.id)) ? data.ai_message : m));
+                            // Scroll to bottom when AI finishes
+                            setTimeout(() => {
+                                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
                         }
                     } catch (e) {
                         console.error('Error parsing SSE data:', e);
@@ -472,17 +482,38 @@ const Chatbot: React.FC = () => {
                                         type="text"
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
-                                        placeholder="Hỏi bất cứ điều gì..."
-                                        className="w-full p-4 pl-6 bg-transparent focus:outline-none text-slate-700 font-medium placeholder:text-slate-400"
+                                        placeholder={isTyping ? "AI đang trả lời..." : "Hỏi bất cứ điều gì..."}
+                                        className={`w-full p-4 pl-6 bg-transparent focus:outline-none text-slate-700 font-medium placeholder:text-slate-400 ${isTyping ? 'cursor-not-allowed' : ''}`}
                                         autoFocus
+                                        disabled={isTyping}
                                     />
                                 </div>
                                 <button
                                     type="submit"
-                                    disabled={!input.trim()}
-                                    className="bg-linear-to-br from-blue-600 to-indigo-700 disabled:from-slate-200 disabled:to-slate-300 text-white w-14 h-14 rounded-3xl transition-all duration-500 shadow-lg shadow-blue-500/30 flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 group"
+                                    disabled={!input.trim() || isTyping}
+                                    className="bg-linear-to-br from-blue-600 to-indigo-700 disabled:from-slate-200 disabled:to-slate-300 text-white w-14 h-14 rounded-3xl transition-all duration-500 shadow-lg shadow-blue-500/30 flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 group overflow-hidden"
                                 >
-                                    <Send className={`w-6 h-6 transform transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 ${!input.trim() ? '' : 'animate-pulse'}`} />
+                                    {isTyping ? (
+                                        <div className="flex gap-1">
+                                            <motion.span 
+                                                animate={{ y: [0, -5, 0] }}
+                                                transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
+                                                className="w-1.5 h-1.5 bg-white rounded-full"
+                                            />
+                                            <motion.span 
+                                                animate={{ y: [0, -5, 0] }}
+                                                transition={{ duration: 0.5, repeat: Infinity, delay: 0.1 }}
+                                                className="w-1.5 h-1.5 bg-white rounded-full"
+                                            />
+                                            <motion.span 
+                                                animate={{ y: [0, -5, 0] }}
+                                                transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
+                                                className="w-1.5 h-1.5 bg-white rounded-full"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <Send className={`w-6 h-6 transform transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 ${!input.trim() ? '' : 'animate-pulse'}`} />
+                                    )}
                                 </button>
                             </div>
                         </div>
