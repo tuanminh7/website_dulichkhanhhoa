@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, login_user
 from app.services.news_service import NewsService
 
 bp = Blueprint('news', __name__, url_prefix='/api/news')
@@ -19,7 +19,8 @@ def get_posts():
 @bp.route('/<string:post_id>', methods=['GET'])
 def get_post(post_id):
     """Lấy chi tiết bài viết"""
-    result, status_code = NewsService.get_post(post_id)
+    user_id = current_user.id if current_user.is_authenticated else None
+    result, status_code = NewsService.get_post(post_id, user_id=user_id)
     return jsonify(result), status_code
 
 

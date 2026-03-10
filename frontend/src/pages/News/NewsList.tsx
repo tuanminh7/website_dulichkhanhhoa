@@ -81,7 +81,7 @@ const NewsList: React.FC = () => {
                                 >
                                     <Link to={`/news/${post.id}`} className="block relative h-64 overflow-hidden">
                                         <img
-                                            src={post.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop'}
+                                            src={post.images?.[0]?.image_url || post.image_url || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop'}
                                             alt={post.title}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />

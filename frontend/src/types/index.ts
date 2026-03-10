@@ -122,15 +122,24 @@ export interface SystemStatistic {
     most_visited_locations?: any[];
 }
 
+export interface PostImage {
+    id: number | null;
+    post_id: string;
+    image_url: string;
+    order: number;
+}
+
 export interface Post {
     id: string;
     title: string;
     content: string;
     image_url?: string;
+    images?: PostImage[];
     author_id: string;
     author_name: string;
     likes_count: number;
     comments_count: number;
+    user_liked?: boolean;
     created_at: string;
     updated_at: string;
     comments?: Comment[];
@@ -146,6 +155,7 @@ export interface Comment {
     parent_id?: string;
     content: string;
     likes_count: number;
+    user_liked?: boolean;
     replies?: Comment[];
     created_at: string;
 }
