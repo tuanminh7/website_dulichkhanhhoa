@@ -202,7 +202,7 @@ const Home: React.FC = () => {
             </section>
 
             {/* Newsletter/Call to Action */}
-            <section className="bg-blue-600 py-32 relative overflow-hidden">
+            <section className="bg-blue-500 py-32 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-white/10 to-transparent opacity-50" />
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-tight">Sẵn sàng để bắt đầu hành trình của bạn?</h2>

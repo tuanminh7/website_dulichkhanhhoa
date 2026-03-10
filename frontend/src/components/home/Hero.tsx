@@ -3,6 +3,7 @@ import { MapPin, Search } from 'lucide-react';
 import React from 'react';
 import TextType from '../ui/TextType';
 import SplitText from '../ui/SplitText';
+import BlurText from '../ui/BlurText';
 
 const Hero: React.FC = () => {
     return (
@@ -60,9 +61,18 @@ const Hero: React.FC = () => {
                         {/* <span className="text-cyan-300">Khánh Hòa</span> */}
                     </h1>
 
-                    <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed font-medium">
+                    <BlurText
+                        className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed font-medium"
+                        text="Khám phá những bãi biển thiên đường, ẩm thực tinh túy và trải nghiệm dịch vụ du lịch thông minh bậc nhất."
+                        delay={200}
+                        animateBy="words"
+                        direction="top"
+                    // onAnimationComplete={handleAnimationComplete}
+                    />
+
+                    {/* <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl leading-relaxed font-medium">
                         Khám phá những bãi biển thiên đường, ẩm thực tinh túy và trải nghiệm dịch vụ du lịch thông minh bậc nhất.
-                    </p>
+                    </p> */}
 
                     <div className="w-full max-w-xl bg-white/10 backdrop-blur-xl p-2 rounded-2xl border border-white/20 shadow-2xl">
                         <div className="flex flex-col md:flex-row gap-2">

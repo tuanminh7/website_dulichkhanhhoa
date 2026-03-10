@@ -235,7 +235,7 @@ const ManageLocations: React.FC = () => {
                                             <tr key={loc.id} className="group hover:bg-gray-50 transition-all">
                                                 <td className="py-6 pl-4">
                                                     <div className="flex items-center">
-                                                        <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden mr-4 flex-shrink-0">
+                                                        <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden mr-4 shrink-0">
                                                             {imgs[0]?.image_url ? (
                                                                 <img src={imgs[0].image_url} alt="" className="w-full h-full object-cover" />
                                                             ) : (
@@ -318,7 +318,7 @@ const ManageLocations: React.FC = () => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+                <div className="fixed inset-0 z-100 flex items-start justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
                     <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-10 relative shadow-2xl my-8">
                         <div className="flex justify-between items-center mb-8">
                             <h2 className="text-2xl font-black text-gray-900">

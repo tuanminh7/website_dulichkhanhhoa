@@ -112,7 +112,7 @@ const ManageUsers: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {loading ? (
                             [1, 2, 3].map(i => (
-                                <div key={i} className="h-64 bg-gray-50 animate-pulse rounded-[2rem]" />
+                                <div key={i} className="h-64 bg-gray-50 animate-pulse rounded-4xl" />
                             ))
                         ) : (
                             filteredUsers.map((user) => (
@@ -120,7 +120,7 @@ const ManageUsers: React.FC = () => {
                                     key={user.id}
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative"
+                                    className="bg-white p-6 rounded-4xl border border-gray-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative"
                                 >
                                     {/* Role menu */}
                                     <div className="absolute top-6 right-6">
@@ -212,7 +212,7 @@ const ManageUsers: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+                        className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}

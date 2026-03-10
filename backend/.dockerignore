@@ -1,5 +1,5 @@
-/instance
-/venv
+instance
+venv
 __pycache__
 *.pyc
 .env
@@ -7,3 +7,5 @@ __pycache__
 .env.example
 *.md
 *.db
+*.sql
+static/uploads/*
