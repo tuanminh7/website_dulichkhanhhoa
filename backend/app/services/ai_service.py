@@ -1,6 +1,6 @@
 import google.generativeai as genai
 from flask import current_app
-import json, os, urllib.parse
+import json, os, re, unicodedata, urllib.parse
 from typing import List, Dict, Optional
 
 
@@ -9,26 +9,122 @@ class GeminiAIService:
     def __init__(self):
         self.model = None
         self.knowledge_base = ""
-        self._configure()
+        self.knowledge_sections = []
         self._load_knowledge_base()
+        self._configure()
     
     def _load_knowledge_base(self):
         """Load custom knowledge base from data_chat.txt"""
         try:
-            import os
             data_path = os.path.join(current_app.root_path, 'data', 'data_chat.txt')
-            if os.path.exists(data_path):
-                with open(data_path, 'r', encoding='utf-8') as f:
-                    self.knowledge_base = f.read()
-            else:
+            if not os.path.exists(data_path):
                 basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
                 data_path = os.path.join(basedir, 'app', 'data', 'data_chat.txt')
-                if os.path.exists(data_path):
-                    with open(data_path, 'r', encoding='utf-8') as f:
-                        self.knowledge_base = f.read()[:15000]
+
+            if os.path.exists(data_path):
+                with open(data_path, 'r', encoding='utf-8') as file_handle:
+                    self.knowledge_base = file_handle.read()
+            else:
+                self.knowledge_base = ""
+
+            raw_sections = re.split(r'\n\s*\n+', self.knowledge_base)
+            self.knowledge_sections = [section.strip() for section in raw_sections if section.strip()]
         except Exception as e:
+            self.knowledge_base = ""
+            self.knowledge_sections = []
             current_app.logger.error(f"Error loading knowledge base: {str(e)}")
     
+    def _normalize_text(self, text: str) -> str:
+        normalized = text.lower().replace('đ', 'd')
+        normalized = unicodedata.normalize('NFD', normalized)
+        normalized = ''.join(ch for ch in normalized if unicodedata.category(ch) != 'Mn')
+        return re.sub(r'[^a-z0-9\s]', ' ', normalized)
+
+    def _extract_keywords(self, text: str) -> List[str]:
+        normalized = self._normalize_text(text)
+        stopwords = {
+            'toi', 'tu', 'van', 'cho', 'xin', 'hay', 'o', 'di', 'nhe', 'la', 'va', 'nhung', 'cac',
+            'nhung', 'mot', 'ngay', 'dem', 'giup', 'minh', 'du', 'lich', 'dia', 'diem', 'tu', 'toi',
+            'co', 'the', 'nao', 'khong', 'duoc', 'voi', 've', 'tai', 'den', 'tham', 'quan', 'goi', 'y',
+            'nhat', 'nhieu', 'it', 'gan', 'xa', 'an', 'uong', 'luu', 'tru', 'chi', 'phi'
+        }
+        tokens = [token for token in normalized.split() if len(token) > 2 and token not in stopwords]
+        ordered = []
+        seen = set()
+        for token in tokens:
+            if token not in seen:
+                seen.add(token)
+                ordered.append(token)
+        return ordered[:8]
+
+    def _get_relevant_knowledge(self, message: str, max_sections: int = 4, max_chars: int = 4500) -> str:
+        if not getattr(self, 'knowledge_sections', None):
+            return self.knowledge_base[:max_chars]
+
+        keywords = self._extract_keywords(message)
+        if not keywords:
+            return '\n\n'.join(self.knowledge_sections[:max_sections])[:max_chars]
+
+        scored_sections = []
+        for index, section in enumerate(self.knowledge_sections):
+            normalized_section = self._normalize_text(section)
+            score = sum(normalized_section.count(keyword) for keyword in keywords)
+            if score > 0:
+                scored_sections.append((score, index, section))
+
+        if not scored_sections:
+            return '\n\n'.join(self.knowledge_sections[:max_sections])[:max_chars]
+
+        scored_sections.sort(key=lambda item: (-item[0], item[1]))
+        selected = []
+        current_length = 0
+        for _, _, section in scored_sections[: max_sections * 2]:
+            clean_section = section.strip()
+            if not clean_section:
+                continue
+            projected = current_length + len(clean_section) + 2
+            if selected and projected > max_chars:
+                break
+            selected.append(clean_section)
+            current_length = projected
+            if len(selected) >= max_sections:
+                break
+
+        return '\n\n'.join(selected)[:max_chars]
+
+    def _get_relevant_image_markdown(self, message: str, max_images: int = 2) -> str:
+        try:
+            backend_dir = os.path.dirname(current_app.root_path)
+            image_dir = os.path.join(backend_dir, 'static', 'images', 'anh')
+            if not os.path.exists(image_dir):
+                image_dir = os.path.join(current_app.root_path, 'static', 'images', 'anh')
+            if not os.path.exists(image_dir):
+                return ''
+
+            images = sorted([filename for filename in os.listdir(image_dir) if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
+            keywords = self._extract_keywords(message)
+            selected = []
+
+            if keywords:
+                for index, image_name in enumerate(images, start=1):
+                    normalized_name = self._normalize_text(os.path.splitext(image_name)[0])
+                    score = sum(normalized_name.count(keyword) for keyword in keywords)
+                    if score > 0:
+                        selected.append((score, index, image_name))
+                selected.sort(key=lambda item: (-item[0], item[1]))
+
+            if not selected:
+                return ''
+
+            lines = []
+            for _, image_index, image_name in selected[:max_images]:
+                display_name = os.path.splitext(image_name)[0]
+                lines.append(f"- ID={image_index}: `![{display_name}](/api/ai/img/{image_index})` — {display_name}")
+            return '\n'.join(lines)
+        except Exception as e:
+            current_app.logger.error(f"Error listing filtered images: {str(e)}")
+            return ''
+
     def _configure(self):
         """Configure Gemini API"""
         try:
@@ -37,7 +133,8 @@ class GeminiAIService:
                 raise ValueError("GEMINI_API_KEY not configured")
             
             genai.configure(api_key=api_key)
-            self.model_name = current_app.config.get('GEMINI_MODEL', 'gemini-1.5-flash')
+            configured_model = current_app.config.get('GEMINI_MODEL') or 'models/gemini-2.5-flash'
+            self.model_name = configured_model if configured_model.startswith('models/') else f'models/{configured_model}'
             
             generation_config = {
                 "temperature": current_app.config.get('AI_TEMPERATURE', 0.7),
@@ -94,22 +191,24 @@ class GeminiAIService:
                 'response': 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.'
             }
     
-    def _get_system_instruction(self, context: Optional[Dict] = None) -> str:
+    def _get_system_instruction(self, message: str = '', context: Optional[Dict] = None) -> str:
         """Build system instruction (separate from chat content)"""
-        system = self._build_tourism_system_prompt()
+        system = self._build_tourism_system_prompt(message)
         if context:
-            system += f"\n\n**Thông tin bổ sung:**\n{json.dumps(context, ensure_ascii=False, indent=2)}"
+            system += f"\n\nThông tin bổ sung:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
         return system
 
     def _do_chat(self, message: str, context: Optional[Dict] = None,
                  chat_history: Optional[List[Dict]] = None, stream: bool = False):
         """Core chat logic using proper system_instruction and multi-turn history."""
-        system_instruction = self._get_system_instruction(context)
-        
-        # Create a model configured with system_instruction
+        system_instruction = self._get_system_instruction(message, context)
+
+        chat_generation_config = dict(self.generation_config)
+        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 1200)
+
         model_with_system = genai.GenerativeModel(
             model_name=self.model_name,
-            generation_config=self.generation_config,
+            generation_config=chat_generation_config,
             safety_settings=self.safety_settings,
             system_instruction=system_instruction
         )
@@ -138,13 +237,17 @@ class GeminiAIService:
         """Chat với AI mode streaming"""
         try:
             response_stream, _ = self._do_chat(message, context, chat_history, stream=True)
+            emitted_length = 0
             for chunk in response_stream:
                 try:
-                    # In new SDK, some chunks are metadata-only and have no text
-                    if chunk.text:
-                        yield chunk.text
+                    if not chunk.text:
+                        continue
+                    emitted_length += len(chunk.text)
+                    yield chunk.text
+                    if emitted_length >= 3500:
+                        yield "\n\nBạn muốn mình tiếp tục gợi ý thêm không? Mình có thể chia nhỏ theo từng nhóm địa điểm."
+                        break
                 except Exception:
-                    # Skip chunks that have no text content (e.g. final stop chunk)
                     pass
         except Exception as e:
             current_app.logger.error(f"Gemini chat stream error: {str(e)}")
@@ -179,7 +282,7 @@ class GeminiAIService:
             return {
                 'success': True,
                 'itinerary': itinerary_data,
-                'model': 'gemini-3-flash-preview'
+                'model': self.model_name
             }
             
         except Exception as e:
@@ -262,57 +365,44 @@ class GeminiAIService:
             current_app.logger.error(f"Error building image index: {str(e)}")
             return {}, {}
 
-    def _build_tourism_system_prompt(self) -> str:
+    def _build_tourism_system_prompt(self, message: str = '') -> str:
         """Build system prompt for tourism assistant"""
-        # Get list of existing images with short slug IDs
-        image_list_str = ""
-        try:
-            backend_dir = os.path.dirname(current_app.root_path)
-            image_dir = os.path.join(backend_dir, 'static', 'images', 'anh')
-            if not os.path.exists(image_dir):
-                image_dir = os.path.join(current_app.root_path, 'static', 'images', 'anh')
-            if os.path.exists(image_dir):
-                images = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
-                for i, img in enumerate(images):
-                    name = os.path.splitext(img)[0]  # Remove extension for display
-                    # Use short numeric ID - safe and never truncated
-                    image_list_str += f"- ID={i+1}: `![{name}](/api/ai/img/{i+1})` — {name}\n"
-        except Exception as e:
-            current_app.logger.error(f"Error listing images: {str(e)}")
+        relevant_knowledge = self._get_relevant_knowledge(message)
+        image_list_str = self._get_relevant_image_markdown(message)
 
-        return f"""Bạn là trợ lý du lịch thông minh chuyên về du lịch địa phương Việt Nam (đặc biệt là Ninh Thuận và Khánh Hòa). 
+        image_rules = "- Không chèn hình ảnh nếu không thực sự cần.\n- Tối đa 2 hình trong một câu trả lời.\n"
+        if image_list_str:
+            image_rules += "- Nếu dùng ảnh, chỉ được dùng CHÍNH XÁC các mã Markdown sau:\n" + image_list_str
+        else:
+            image_rules += "- Hiện tại không có ảnh phù hợp rõ ràng với câu hỏi, nên ưu tiên trả lời bằng chữ.\n"
 
-**QUY TẮC ĐỊNH DẠNG QUAN TRỌNG:**
-- TUYỆT ĐỐI KHÔNG sử dụng các ký tự định dạng Markdown như dấu thăng (#, ##, ###) để làm tiêu đề.
-- TUYỆT ĐỐI KHÔNG sử dụng dấu sao (** hoặc __) để bôi đậm văn bản.
-- Chỉ sử dụng văn bản thuần túy, xuống dòng và dấu gạch đầu dòng (-) để trình bày.
-- NGOẠI LỆ DUY NHẤT: Chỉ sử dụng Markdown cho hình ảnh theo đúng danh sách ID bên dưới.
+        return f"""Bạn là trợ lý du lịch thông minh chuyên về du lịch địa phương Việt Nam, đặc biệt là Ninh Thuận và Khánh Hòa.
 
-**Vai trò của bạn:**
-- Tư vấn lịch trình du lịch chi tiết và phù hợp
-- Giới thiệu địa điểm du lịch, ẩm thực, lưu trú
-- Ước tính chi phí chuyến đi hợp lý
-- Cung cấp thông tin hữu ích về văn hóa, phong tục địa phương
-- Gợi ý các hoạt động thú vị và trải nghiệm độc đáo
+QUY TẮC TRẢ LỜI BẮT BUỘC:
+- Trả lời ngắn gọn, dễ đọc, ưu tiên chất lượng hơn số lượng.
+- Với câu hỏi gợi ý địa điểm, chỉ chọn 3 đến 5 địa điểm phù hợp nhất.
+- Mỗi địa điểm chỉ mô tả 1 đến 2 ý ngắn.
+- Nếu người dùng hỏi rộng, hãy trả lời theo dạng tóm tắt trước rồi hỏi họ có muốn mình đào sâu thêm không.
+- Không liệt kê toàn bộ dữ liệu bạn biết trong một lần trả lời.
+- Không nhắc lại trùng lặp cùng một địa điểm hoặc cùng một ý.
+- Nếu câu trả lời dài, hãy ưu tiên cắt gọn và kết bằng lời đề nghị: 'Nếu bạn muốn, mình sẽ gợi ý thêm phần tiếp theo.'
 
-**Phong cách giao tiếp:**
-- Thân thiện, nhiệt tình và chuyên nghiệp
-- Sử dụng tiếng Việt tự nhiên, dễ hiểu
-- Đưa ra lời khuyên cụ thể, có căn cứ
-- Tôn trọng ngân sách và sở thích của khách
+QUY TẮC ĐỊNH DẠNG:
+- Không dùng tiêu đề Markdown kiểu #, ##, ###.
+- Không lạm dụng in đậm.
+- Ưu tiên danh sách gạch đầu dòng ngắn.
+- Không tạo đoạn văn quá dài.
 
-**Nguyên tắc:**
-- Ưu tiên du lịch bền vững và có trách nhiệm
-- Luôn cập nhật thông tin thực tế và chính xác
+QUY TẮC HÌNH ẢNH:
+{image_rules}
 
-- Khi giới thiệu các địa điểm nổi tiếng, bạn CÓ THỂ sử dụng hình ảnh minh họa bằng mã Markdown ID dưới đây.
-- Sử dụng CHÍNH XÁC mã Markdown được cung cấp (không tự ý thay đổi đường dẫn):
-{image_list_str}
+PHONG CÁCH:
+- Thân thiện, thực tế, đúng trọng tâm.
+- Ưu tiên gợi ý có thể áp dụng ngay.
 
-**Kiến thức chuyên môn (Bạn phải tuyệt đối ưu tiên thông tin này):**
-{self.knowledge_base}"""
-    
-    
+KIẾN THỨC LIÊN QUAN ĐẾN CÂU HỎI HIỆN TẠI:
+{relevant_knowledge}
+"""
 
     def _build_itinerary_prompt(self, preferences: dict) -> str:
         """Build prompt for itinerary generation"""

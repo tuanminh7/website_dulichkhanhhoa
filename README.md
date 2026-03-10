@@ -192,21 +192,35 @@ cp .env.example .env
 # Chỉnh sửa .env với API keys của bạn
 ```
 
-5. **Khởi tạo database**
+5. **Chạy migration**
 
 ```bash
-flask db init
-flask db migrate
-flask db upgrade
+make db-upgrade
 ```
 
-6. **Chạy ứng dụng**
+`Makefile` sẽ tự ưu tiên `.venv/bin/python`, nếu không có sẽ fallback sang `python3`.
+
+Nếu muốn đồng bộ lại tài khoản admin theo `.env` hiện tại, dùng `make sync-admin`.
+
+6. **Seed dữ liệu nền**
 
 ```bash
-python run.py
+make seed-baseline
+```
+
+7. **Chạy ứng dụng**
+
+```bash
+make run-backend
 ```
 
 Truy cập: `http://localhost:5000`
+
+Hoặc nếu muốn chạy liền một mạch theo flow production local:
+
+```bash
+make bootstrap
+```
 
 ---
 
@@ -231,6 +245,33 @@ GOOGLE_MAPS_API_KEY=your-google-maps-key-here
 # Admin Account
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=secure-password
+```
+
+
+### Docker production flow
+
+- Lần deploy đầu, backend container sẽ tự chạy `python manage.py bootstrap-production`
+- Lệnh này gồm 3 bước: chờ DB sẵn sàng → `db upgrade` → `seed-baseline`
+- `seed-baseline` chỉ tạo dữ liệu nền idempotent: 3 category mặc định và tài khoản admin nếu chưa tồn tại
+- Không tự seed dữ liệu demo vào production
+
+```bash
+docker compose up -d --build
+```
+
+Nếu chỉ muốn chạy backend stack để kiểm tra:
+
+```bash
+make docker-backend
+```
+
+Các lệnh vận hành nhanh khác:
+
+```bash
+make help
+make docker-up
+make docker-logs-backend
+make docker-down
 ```
 
 ### Lấy API Keys

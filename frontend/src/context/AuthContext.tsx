@@ -18,25 +18,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        let active = true;
 
-    useEffect(() => { checkAuth() }, []);
+        const checkAuth = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                if (active) {
+                    setLoading(false);
+                }
+                return;
+            }
 
-    const checkAuth = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setLoading(false);
-            return;
-        }
+            try {
+                const res = await authService.getMe();
+                if (active) {
+                    setUser(res.data);
+                }
+            } catch (error) {
+                localStorage.removeItem('token');
+                if (active) {
+                    setUser(null);
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
+            }
+        };
 
-        try {
-            const res = await authService.getMe();
-            setUser(res.data);
-        } catch (error) {
-            localStorage.removeItem('token');
-        } finally {
-            setLoading(false);
-        }
-    };
+        checkAuth();
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     const login = async (credentials: any) => {
         const res = await authService.login(credentials);

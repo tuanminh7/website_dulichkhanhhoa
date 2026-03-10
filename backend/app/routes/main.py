@@ -1,42 +1,51 @@
-from flask import Blueprint, render_template, jsonify
-from app import db
+import json
+
+from flask import Blueprint, jsonify
 from sqlalchemy import func
+
+from app import cache, db
 
 bp = Blueprint('main', __name__)
 
+
 @bp.route('/api/stats')
 def get_stats():
-    """Get system statistics"""
     try:
-        from app.models.user import User
+        cached_payload = cache.get('main:stats')
+        if cached_payload:
+            try:
+                return jsonify(json.loads(cached_payload))
+            except (TypeError, json.JSONDecodeError):
+                pass
+
         from app.models.interaction import SavedItinerary
         from app.models.location import Location
-        
+        from app.models.user import User
+
         stats = {
             'total_places': Location.query.filter(Location.status == 'ACTIVE').count(),
             'total_users': User.query.count(),
             'total_itineraries': SavedItinerary.query.count(),
             'categories': {}
         }
-        
-        # Count by category
+
         categories = db.session.query(
             Location.category_id,
             func.count(Location.id)
         ).filter(Location.status == 'ACTIVE').group_by(Location.category_id).all()
-        
+
         for category_id, count in categories:
             stats['categories'][str(category_id)] = count
-        
+
+        cache.set('main:stats', json.dumps(stats, ensure_ascii=False), ex=120)
         return jsonify(stats)
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @bp.route('/api/health')
 def health_check():
-    """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
         'service': 'Tourism API',
@@ -46,8 +55,6 @@ def health_check():
 
 @bp.route('/')
 def index():
-    """Root index - provide quick info or redirect to health endpoint"""
-    # Simple JSON response so visiting the root doesn't return 404
     return jsonify({
         'message': 'Tourism API running',
         'health': '/api/health'

@@ -141,6 +141,7 @@ const Chatbot: React.FC = () => {
             let aiMessageId: number | null = null;
             let currentText = '';
             let buffer = '';
+            let didReceiveDone = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -184,6 +185,7 @@ const Chatbot: React.FC = () => {
                         }
 
                         if (data.done && data.ai_message) {
+                            didReceiveDone = true;
                             setMessages(prev => prev.map(m => (m.sender_type === 'AI' && (m.id === aiMessageId || !m.id)) ? data.ai_message : m));
                         }
                     } catch (e) {
@@ -192,6 +194,14 @@ const Chatbot: React.FC = () => {
                 }
 
                 if (done) break;
+            }
+
+            if (!didReceiveDone && currentText.trim()) {
+                const safeText = currentText.trim().replace(/[,:;\-–—\s]+$/u, '');
+                setMessages(prev => prev.map(m => (m.sender_type === 'AI' && m.id === aiMessageId)
+                    ? { ...m, message_content: `${safeText}\n\n(Bạn muốn mình tiếp tục phần còn lại không?)` }
+                    : m
+                ));
             }
         } catch (error) {
             console.error('Error sending message:', error);
