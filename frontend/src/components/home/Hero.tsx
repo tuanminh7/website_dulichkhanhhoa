@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin, Search } from 'lucide-react';
 import React from 'react';
-import TextType from '../ui/TextType/TextType';
+import TextType from '../ui/TextType';
 
 const Hero: React.FC = () => {
     return (
@@ -27,15 +27,14 @@ const Hero: React.FC = () => {
 
                     <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
                         <TextType
-                            text={["vẻ đẹp", "khám phá", "du lịch"]}
+                            text={["vẻ đẹp tuyệt diệu", "khám phá", "du lịch"]}
                             typingSpeed={75}
                             pauseDuration={1500}
                             showCursor
                             cursorCharacter="_"
                             deletingSpeed={50}
                             variableSpeedEnabled={false}
-                            variableSpeedMin={60}
-                            variableSpeedMax={120}
+                            variableSpeed={{ min: 60, max: 120 }}
                             cursorBlinkDuration={0.5}
                         />
                         <br />

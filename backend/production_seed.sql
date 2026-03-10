@@ -36,7 +36,7 @@ BEGIN
     -- Bánh căn
     INSERT INTO locations (name, category_id, description, address, status, rating_avg) 
     VALUES ('Bánh căn', food_id, 'Bánh căn Ninh Thuận - Món ăn dân dã đặc trưng.', 'Ninh Thuận', 'ACTIVE', 4.8);
-    INSERT INTO dishes (name, description, image_url) VALUES ('Bánh căn', 'Bánh căn Ninh Thuận - Món ăn dân dã đặc trưng.', '/static/images/anh/Bánh căn.webp');
+    INSERT INTO dishes (name, description, image_url) VALUES ('Bánh căn', 'Bánh căn Ninh Thuận - Món ăn dân dã đặc trưng.', '/uploads/banh-can.webp');
 
     -- Hang Rái
     INSERT INTO locations (name, category_id, description, address, status, rating_avg) 
@@ -52,19 +52,19 @@ BEGIN
 
     -- Images
     INSERT INTO location_images (location_id, image_url, is_primary) 
-    SELECT id, '/static/images/anh/Biển Cà Ná.jpg', true FROM locations WHERE name = 'Biển Cà Ná';
+    SELECT id, '/uploads/bien-ca-na.jpg', true FROM locations WHERE name = 'Biển Cà Ná';
     
     INSERT INTO location_images (location_id, image_url, is_primary) 
-    SELECT id, '/static/images/anh/Bánh căn.webp', true FROM locations WHERE name = 'Bánh căn';
+    SELECT id, '/uploads/banh-can.webp', true FROM locations WHERE name = 'Bánh căn';
     
     INSERT INTO location_images (location_id, image_url, is_primary) 
-    SELECT id, '/static/images/anh/Hang Rái.webp', true FROM locations WHERE name = 'Hang Rái';
+    SELECT id, '/uploads/hang-rai.webp', true FROM locations WHERE name = 'Hang Rái';
     
     INSERT INTO location_images (location_id, image_url, is_primary) 
-    SELECT id, '/static/images/anh/Vịnh Vĩnh Hy.jpg', true FROM locations WHERE name = 'Vịnh Vĩnh Hy';
+    SELECT id, '/uploads/vinh-vinh-hy.jpg', true FROM locations WHERE name = 'Vịnh Vĩnh Hy';
     
     INSERT INTO location_images (location_id, image_url, is_primary) 
-    SELECT id, '/static/images/anh/Tháp Po Klong Garai.jpg', true FROM locations WHERE name = 'Tháp Po Klong Garai';
+    SELECT id, '/uploads/thap-po-klong-garai.jpg', true FROM locations WHERE name = 'Tháp Po Klong Garai';
 
     -- Remaining items can be added similarly...
 END $$;

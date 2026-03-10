@@ -34,6 +34,14 @@ def wait_for_db(timeout=60, interval=2):
 
 
 def db_upgrade():
+    migrations_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+    if not os.path.exists(migrations_dir):
+        print('Warning: migrations dir not found. Using db.create_all() as fallback.')
+        with app.app_context():
+            ensure_schema_compatibility()
+            db.create_all()
+        return
+
     with app.app_context():
         if _has_existing_schema_without_alembic():
             ensure_schema_compatibility()

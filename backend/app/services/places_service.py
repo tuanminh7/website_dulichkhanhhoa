@@ -130,7 +130,7 @@ class PlacesService:
         if existing_primary:
             existing_primary.is_primary = False
 
-        image = LocationImage(location=location, image_url=f'/static/uploads/{filename}', is_primary=True)
+        image = LocationImage(location=location, image_url=f'/uploads/{filename}', is_primary=True)
         db.session.add(image)
 
     @staticmethod

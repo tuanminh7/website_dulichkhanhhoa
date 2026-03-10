@@ -2,7 +2,6 @@
 import type { ElementType } from 'react';
 import { useEffect, useRef, useState, createElement, useMemo, useCallback } from 'react';
 import { gsap } from 'gsap';
-import './TextType.css';
 
 interface TextTypeProps {
     className?: string;
@@ -20,6 +19,7 @@ interface TextTypeProps {
     loop?: boolean;
     textColors?: string[];
     variableSpeed?: { min: number; max: number };
+    variableSpeedEnabled?: boolean; // Thêm dòng này vào
     onSentenceComplete?: (sentence: string, index: number) => void;
     startOnVisible?: boolean;
     reverseMode?: boolean;
@@ -175,16 +175,16 @@ const TextType = ({
         Component,
         {
             ref: containerRef,
-            className: `text-type ${className}`,
+            className: `inline-block whitespace-pre-wrap tracking-tight ${className}`,
             ...props
         },
-        <span className="text-type__content" style={{ color: getCurrentTextColor() || 'inherit' }}>
+        <span className="inline" style={{ color: getCurrentTextColor() || 'inherit' }}>
             {displayedText}
         </span>,
         showCursor && (
             <span
                 ref={cursorRef}
-                className={`text-type__cursor ${cursorClassName} ${shouldHideCursor ? 'text-type__cursor--hidden' : ''}`}
+                className={`ml-1 inline-block opacity-100 ${shouldHideCursor ? 'hidden' : ''} ${cursorClassName}`}
             >
                 {cursorCharacter}
             </span>

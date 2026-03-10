@@ -137,21 +137,25 @@ def ensure_schema_compatibility():
         if 'users' in table_names:
             user_columns = {column['name'] for column in inspect(engine).get_columns('users')}
             if 'is_active' not in user_columns:
-                connection.execute(text('ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1'))
-                connection.execute(text('UPDATE users SET is_active = 1 WHERE is_active IS NULL'))
+                connection.execute(text('ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE'))
+                connection.execute(text('UPDATE users SET is_active = TRUE WHERE is_active IS NULL'))
 
         if 'chat_sessions' in table_names:
             chat_columns = {column['name'] for column in inspect(engine).get_columns('chat_sessions')}
             if 'updated_at' not in chat_columns:
-                connection.execute(text('ALTER TABLE chat_sessions ADD COLUMN updated_at DATETIME'))
+                connection.execute(text('ALTER TABLE chat_sessions ADD COLUMN updated_at TIMESTAMP'))
                 connection.execute(text('UPDATE chat_sessions SET updated_at = started_at WHERE updated_at IS NULL'))
 
         if 'saved_itineraries' in table_names:
             itinerary_columns = {column['name'] for column in inspect(engine).get_columns('saved_itineraries')}
             if 'updated_at' not in itinerary_columns:
-                connection.execute(text('ALTER TABLE saved_itineraries ADD COLUMN updated_at DATETIME'))
+                connection.execute(text('ALTER TABLE saved_itineraries ADD COLUMN updated_at TIMESTAMP'))
                 connection.execute(text('UPDATE saved_itineraries SET updated_at = created_at WHERE updated_at IS NULL'))
 
+        if engine.name == 'postgresql':
+            type_exists = connection.execute(text("SELECT 1 FROM pg_type WHERE typname = 'sender_types'")).scalar()
+            if type_exists:
+                connection.execute(text("ALTER TYPE sender_types ADD VALUE IF NOT EXISTS 'AI'"))
 
 def create_app(config_name=None):
     if config_name is None:

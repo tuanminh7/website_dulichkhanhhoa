@@ -53,7 +53,8 @@ const Home: React.FC = () => {
             <section className="mt-40 mb-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-20">
                     <span className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs mb-4 block">Tại sao chọn chúng tôi</span>
-                    <h2 className="text-4xl md:text-6xl font-black text-gray-900 leading-tight capitalize">Trải nghiệm du lịch <br /> thế hệ mới</h2>
+                    <h2 className="text-4xl md:text-6xl font-black text-gray-900 leading-tight capitalize">
+                        Trải nghiệm du lịch <br /> thế hệ mới</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                     {features.map((f, i) => (
