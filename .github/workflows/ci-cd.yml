@@ -61,8 +61,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          # Gửi file docker-compose và toàn bộ thư mục nginx (chứa default.conf)
-          source: "docker-compose.yml,nginx/"
+          # Gửi file docker-compose và các file cấu hình nginx trong thư mục frontend
+          source: "docker-compose.yml,frontend/*.conf"
           target: "/root/webapp"
 
       - name: Deploy to Server via SSH
@@ -79,13 +79,14 @@ jobs:
             cat <<EOF > .env
             ${{ secrets.ENVIRONMENT }}
             SERVER_IP=${{ secrets.SERVER_IP }}
+            REPO_OWNER=${{ env.REPO_OWNER }}
             EOF
 
-            docker compose down
+            docker compose down --remove-orphans
             docker compose pull
-            docker compose up -d --remove-orphans
+            docker compose up -d
             docker image prune -af
 
             echo "Đang đợi database (postgesSQL-container) khởi chạy........"
-            sleep 15
+            sleep 10
             docker compose exec -T backend flask db upgrade
