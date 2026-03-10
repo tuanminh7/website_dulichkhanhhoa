@@ -364,11 +364,10 @@ const NewsDetail: React.FC = () => {
                         <div className="flex items-center gap-6 py-8 border-t border-b border-gray-100 mb-12">
                             <button
                                 onClick={handleLike}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
-                                    post.user_liked
+                                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${post.user_liked
                                         ? 'bg-blue-50 text-blue-600'
                                         : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                                }`}
+                                    }`}
                             >
                                 <ThumbsUp className={`w-5 h-5 ${post.user_liked ? 'fill-current' : ''}`} />
                                 {post.likes_count} Thích

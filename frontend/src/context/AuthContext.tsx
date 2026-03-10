@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         navigate('/');
     };
-    
+
     const updateUser = (newUser: User) => {
         setUser(newUser);
     };

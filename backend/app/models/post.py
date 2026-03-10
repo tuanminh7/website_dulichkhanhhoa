@@ -80,11 +80,7 @@ class Comment(db.Model):
     replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic', cascade='all, delete-orphan')
     likes = db.relationship('CommentLike', backref='comment', lazy='dynamic', cascade='all, delete-orphan')
     
-    def to_dict(self, user_id=None):
-        user_liked = False
-        if user_id:
-            user_liked = CommentLike.query.filter_by(comment_id=self.id, user_id=user_id).first() is not None
-
+    def to_dict(self):
         return {
             'id': self.id,
             'post_id': self.post_id,
@@ -94,7 +90,6 @@ class Comment(db.Model):
             'parent_id': self.parent_id,
             'content': self.content,
             'likes_count': self.likes.count(),
-            'user_liked': user_liked,
             'created_at': self.created_at.isoformat()
         }
 
