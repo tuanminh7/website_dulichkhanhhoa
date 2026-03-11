@@ -12,9 +12,26 @@ bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 @bp.route('/img/<slug>', methods=['GET'])
 def serve_image(slug):
     try:
-        image = resolve_chatbot_image(slug)
-        if image:
-            return send_file(str(image['path']))
+        # Thử các đường dẫn theo thứ tự ưu tiên
+        possible_dirs = [
+            pathlib.Path(current_app.root_path).parent / 'static' / 'uploads',
+            pathlib.Path(current_app.root_path) / 'static' / 'uploads' / 'images'
+        ]
+
+        image_dir = None
+        for d in possible_dirs:
+            if d.exists():
+                image_dir = d
+                break
+
+        if image_dir is None:
+            return jsonify({'error': 'Image directory not found'}), 404
+
+        images = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
+        idx = int(slug) - 1
+        if 0 <= idx < len(images):
+            filepath = image_dir / images[idx]
+            return send_file(str(filepath))
         return jsonify({'error': 'Image not found'}), 404
     except Exception as e:
         current_app.logger.error(f'Error serving chatbot image {slug}: {str(e)}')

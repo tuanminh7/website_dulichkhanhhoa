@@ -47,12 +47,20 @@ class NewsService:
         top_level_comments = post.comments.filter_by(parent_id=None).order_by(Comment.created_at.asc()).all()
         
         def serialize_comment(c):
-            cdict = c.to_dict()
-            cdict['replies'] = [serialize_comment(r) for r in c.replies.order_by(Comment.created_at.asc()).all()]
+            cdict = c.to_dict(user_id=user_id)
+            cdict['replies'] = [
+                serialize_comment(r)
+                for r in c.replies.order_by(Comment.created_at.asc()).all()
+            ]
+            # interaction_score: combinations of likes and replies count
+            cdict['interaction_score'] = cdict['likes_count'] + len(cdict['replies'])
             return cdict
-            
-        post_data['comments'] = [serialize_comment(c) for c in top_level_comments]
-        
+
+        serialized_comments = [serialize_comment(c) for c in top_level_comments]
+        serialized_comments.sort(key=lambda x: (x.get('interaction_score', 0), x['created_at']), reverse=True)
+
+        post_data['comments'] = serialized_comments
+
         return post_data, 200
 
     @staticmethod
