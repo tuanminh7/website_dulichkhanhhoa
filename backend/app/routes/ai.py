@@ -17,9 +17,8 @@ def serve_image(slug):
     try:
         # Thử các đường dẫn theo thứ tự ưu tiên
         possible_dirs = [
-            pathlib.Path(current_app.root_path).parent / 'static' / 'uploads' / 'images' / 'anh',
-            pathlib.Path(current_app.root_path) / 'static' / 'uploads' / 'images' / 'anh',
-            pathlib.Path(r'C:\Kho Lưu Trữ 2\thi_websiteorAI\code_wwb\backend\static\uploads\images\anh'),
+            pathlib.Path(current_app.root_path).parent / 'static' / 'uploads',
+            pathlib.Path(current_app.root_path) / 'static' / 'uploads' / 'images'
         ]
 
         image_dir = None
