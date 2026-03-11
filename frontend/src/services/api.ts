@@ -109,6 +109,7 @@ api.interceptors.response.use(
         triggerLoading(false);
         if (error?.response?.status === 401) {
             invalidateCache('GET:/auth/me:');
+            window.dispatchEvent(new CustomEvent('auth:expired'));
         }
         return Promise.reject(error);
     }

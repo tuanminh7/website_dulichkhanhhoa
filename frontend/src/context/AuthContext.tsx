@@ -50,8 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         checkAuth();
 
+        const handleAuthExpired = () => {
+            localStorage.removeItem('token');
+            if (active) setUser(null);
+            navigate('/login', { state: { message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' } });
+        };
+        window.addEventListener('auth:expired', handleAuthExpired);
+
         return () => {
             active = false;
+            window.removeEventListener('auth:expired', handleAuthExpired);
         };
     }, []);
 
