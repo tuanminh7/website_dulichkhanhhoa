@@ -1,53 +1,163 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { locationService, interactionService } from '../../services/api';
 import type { Location, Review } from '../../types';
-import { MapPin, Clock, Star, Heart, Share2, ArrowLeft, MessageSquare, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MapPin, Clock, Star, Heart, Share2, ArrowLeft, MessageSquare, ShieldCheck, Send } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
+// ─── Star Picker ──────────────────────────────────────────────────────────────
+const StarPicker: React.FC<{ value: number; onChange: (v: number) => void }> = ({ value, onChange }) => {
+    const [hovered, setHovered] = useState(0);
+    return (
+        <div className="flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map(s => (
+                <button
+                    key={s}
+                    type="button"
+                    onClick={() => onChange(s)}
+                    onMouseEnter={() => setHovered(s)}
+                    onMouseLeave={() => setHovered(0)}
+                    className="transition-transform hover:scale-110"
+                >
+                    <Star
+                        className={`w-8 h-8 transition-colors ${
+                            s <= (hovered || value) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'
+                        }`}
+                    />
+                </button>
+            ))}
+            {value > 0 && (
+                <span className="ml-2 text-sm font-bold text-amber-500">
+                    {['', 'Rất tệ', 'Tệ', 'Bình thường', 'Tốt', 'Xuất sắc'][value]}
+                </span>
+            )}
+        </div>
+    );
+};
+
+// ─── Rating Summary ───────────────────────────────────────────────────────────
+const RatingSummary: React.FC<{ reviews: Review[]; avgRating: number }> = ({ reviews, avgRating }) => {
+    if (reviews.length === 0) return null;
+    const counts = [5, 4, 3, 2, 1].map(s => ({
+        star: s,
+        count: reviews.filter(r => r.rating === s).length
+    }));
+    return (
+        <div className="flex items-center gap-8 p-6 bg-amber-50 rounded-3xl mb-8 border border-amber-100">
+            <div className="text-center shrink-0">
+                <p className="text-5xl font-black text-amber-500">{avgRating.toFixed(1)}</p>
+                <div className="flex items-center gap-0.5 justify-center my-1">
+                    {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`w-4 h-4 ${s <= Math.round(avgRating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}`} />
+                    ))}
+                </div>
+                <p className="text-sm text-gray-500 font-medium">{reviews.length} đánh giá</p>
+            </div>
+            <div className="flex-1 space-y-1.5">
+                {counts.map(({ star, count }) => (
+                    <div key={star} className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-500 w-3">{star}</span>
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-amber-400 rounded-full transition-all"
+                                style={{ width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%' }}
+                            />
+                        </div>
+                        <span className="text-xs text-gray-500 w-4 text-right">{count}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const LocationDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const { user } = useAuth();
     const [location, setLocation] = useState<Location | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
 
-    useEffect(() => {
-        if (id) {
-            fetchData(parseInt(id));
-        }
-    }, [id]);
+    // Review form
+    const [rating, setRating] = useState(0);
+    const [reviewComment, setReviewComment] = useState('');
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
 
-    const fetchData = async (locationId: number) => {
+    const fetchData = useCallback(async (locationId: number) => {
         try {
             const [locRes, revRes] = await Promise.all([
                 locationService.getById(locationId),
                 interactionService.getReviews(locationId)
             ]);
             setLocation(locRes.data);
-            setReviews(revRes.data);
+            const revs: Review[] = Array.isArray(revRes.data) ? revRes.data : [];
+            setReviews(revs);
+            // Check if current user already reviewed
+            if (user) {
+                setHasReviewed(revs.some(r => r.user_id === user.id));
+            }
         } catch (error) {
             console.error('Error fetching details:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (id) fetchData(parseInt(id));
+    }, [id, fetchData]);
 
     const handleToggleFavorite = async () => {
+        if (!user) { toast.error('Vui lòng đăng nhập để yêu thích địa điểm!'); return; }
         if (!location) return;
         try {
             await interactionService.toggleFavorite(location.id);
             setIsFavorite(!isFavorite);
-        } catch (error) {
-            console.error('Error toggling favorite:', error);
+            toast.success(isFavorite ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích!');
+        } catch {
+            toast.error('Có lỗi xảy ra, vui lòng thử lại');
+        }
+    };
+
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user) { toast.error('Vui lòng đăng nhập để đánh giá!'); return; }
+        if (rating === 0) { toast.error('Vui lòng chọn số sao!'); return; }
+        if (!location) return;
+
+        setSubmittingReview(true);
+        try {
+            await interactionService.addReview(location.id, { rating, comment: reviewComment });
+            toast.success('Cảm ơn bạn đã đánh giá!');
+            setRating(0);
+            setReviewComment('');
+            setHasReviewed(true);
+            // Reload data
+            await fetchData(location.id);
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || 'Không thể gửi đánh giá';
+            toast.error(msg);
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
     if (loading) return <div className="pt-32 text-center">Đang tải thông tin...</div>;
     if (!location) return <div className="pt-32 text-center text-red-500">Không tìm thấy địa điểm.</div>;
 
+    const avgRating = reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : location.rating_avg || 0;
+
     return (
         <div className="pt-20 pb-20 bg-white">
+            {/* Hero Image */}
             <div className="relative h-[60vh] overflow-hidden">
                 <img
                     src={location.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1544918877-460635b64a36?q=80&w=2070&auto=format&fit=crop'}
@@ -69,7 +179,8 @@ const LocationDetail: React.FC = () => {
                         </span>
                         <div className="flex items-center text-orange-400 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">
                             <Star className="w-4 h-4 fill-current mr-1" />
-                            <span className="font-bold">{location.rating_avg.toFixed(1)}</span>
+                            <span className="font-bold">{avgRating.toFixed(1)}</span>
+                            <span className="text-xs ml-1 text-orange-300">({reviews.length})</span>
                         </div>
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black mb-6 uppercase leading-tight">{location.name}</h1>
@@ -89,6 +200,7 @@ const LocationDetail: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
                     <div className="lg:col-span-2 space-y-12">
+                        {/* Description */}
                         <div>
                             <h2 className="text-3xl font-bold text-gray-900 mb-6">Giới thiệu</h2>
                             <p className="text-gray-600 text-lg leading-relaxed whitespace-pre-line">
@@ -96,6 +208,7 @@ const LocationDetail: React.FC = () => {
                             </p>
                         </div>
 
+                        {/* Photo Gallery */}
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 mb-6">Hình ảnh</h2>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -111,36 +224,115 @@ const LocationDetail: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Reviews Section */}
                         <div className="pt-12 border-t border-gray-100">
-                            <div className="flex justify-between items-center mb-10">
+                            <div className="flex justify-between items-center mb-8">
                                 <h2 className="text-3xl font-bold text-gray-900">Đánh giá từ du khách</h2>
-                                <button className="bg-gray-50 text-gray-900 px-6 py-3 rounded-2xl font-bold hover:bg-gray-100 transition-all border border-gray-100">
-                                    Viết đánh giá
-                                </button>
                             </div>
 
-                            <div className="space-y-8">
+                            {/* Rating Summary */}
+                            <RatingSummary reviews={reviews} avgRating={avgRating} />
+
+                            {/* Review Form */}
+                            <AnimatePresence mode="wait">
+                                {!user ? (
+                                    <motion.div
+                                        key="login-prompt"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="p-8 bg-blue-50 border border-blue-100 rounded-3xl text-center mb-8"
+                                    >
+                                        <Star className="w-10 h-10 text-blue-300 mx-auto mb-3" />
+                                        <p className="text-blue-800 font-medium mb-4">Đăng nhập để chia sẻ đánh giá của bạn về địa điểm này.</p>
+                                        <Link
+                                            to="/login"
+                                            className="inline-block px-8 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all"
+                                        >
+                                            Đăng nhập ngay
+                                        </Link>
+                                    </motion.div>
+                                ) : hasReviewed ? (
+                                    <motion.div
+                                        key="already-reviewed"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="p-6 bg-teal-50 border border-teal-100 rounded-3xl text-center mb-8"
+                                    >
+                                        <ShieldCheck className="w-8 h-8 text-teal-500 mx-auto mb-2" />
+                                        <p className="text-teal-700 font-semibold">Bạn đã đánh giá địa điểm này rồi. Cảm ơn!</p>
+                                    </motion.div>
+                                ) : (
+                                    <motion.form
+                                        key="review-form"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        onSubmit={handleSubmitReview}
+                                        className="bg-gray-50 rounded-3xl p-6 border border-gray-100 mb-8"
+                                    >
+                                        <h3 className="text-lg font-bold text-gray-900 mb-4">Viết đánh giá của bạn</h3>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Chất lượng</label>
+                                            <StarPicker value={rating} onChange={setRating} />
+                                        </div>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-semibold text-gray-600 mb-2">Nhận xét (tùy chọn)</label>
+                                            <textarea
+                                                value={reviewComment}
+                                                onChange={e => setReviewComment(e.target.value)}
+                                                placeholder="Chia sẻ trải nghiệm của bạn tại đây..."
+                                                rows={4}
+                                                className="w-full p-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                                            />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={submittingReview || rating === 0}
+                                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/30"
+                                        >
+                                            {submittingReview
+                                                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                : <Send className="w-4 h-4" />
+                                            }
+                                            Gửi đánh giá
+                                        </button>
+                                    </motion.form>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Reviews List */}
+                            <div className="space-y-6">
                                 {reviews.length > 0 ? (
-                                    reviews.map((rev) => (
-                                        <div key={rev.id} className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100">
-                                            <div className="flex justify-between items-start mb-6">
-                                                <div className="flex items-center">
-                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 font-bold shadow-sm mr-4 border border-gray-100">
-                                                        {rev.user?.fullname?.[0] || 'U'}
+                                    reviews.map((rev, idx) => (
+                                        <motion.div
+                                            key={rev.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100"
+                                        >
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-11 h-11 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg overflow-hidden shrink-0">
+                                                        {rev.user?.avatar
+                                                            ? <img src={rev.user.avatar} alt={rev.user.fullname} className="w-full h-full object-cover" />
+                                                            : (rev.user?.fullname || 'U').charAt(0)
+                                                        }
                                                     </div>
                                                     <div>
                                                         <h4 className="font-bold text-gray-900">{rev.user?.fullname || 'Ẩn danh'}</h4>
-                                                        <p className="text-xs text-gray-400">{new Date(rev.created_at).toLocaleDateString()}</p>
+                                                        <p className="text-xs text-gray-400">{new Date(rev.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex text-orange-400">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <Star key={i} className={`w-4 h-4 ${i < rev.rating ? 'fill-current' : 'text-gray-200'}`} />
+                                                <div className="flex items-center gap-1">
+                                                    {[1,2,3,4,5].map(s => (
+                                                        <Star key={s} className={`w-4 h-4 ${s <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'}`} />
                                                     ))}
                                                 </div>
                                             </div>
-                                            <p className="text-gray-600 leading-relaxed font-medium italic">"{rev.comment}"</p>
-                                        </div>
+                                            {rev.comment && (
+                                                <p className="text-gray-600 leading-relaxed italic">"{rev.comment}"</p>
+                                            )}
+                                        </motion.div>
                                     ))
                                 ) : (
                                     <div className="text-center py-12 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-100">
@@ -152,6 +344,7 @@ const LocationDetail: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Sidebar */}
                     <div className="space-y-8">
                         <div className="bg-gray-900 rounded-[2.5rem] p-8 text-white shadow-xl shadow-gray-200 sticky top-24">
                             <div className="flex items-center justify-between mb-8">

@@ -7,6 +7,7 @@ from app import cache, db
 from app.models.ai import ChatSession
 from app.models.interaction import Review, SavedItinerary
 from app.models.location import Location
+from app.models.post import Comment, Post
 from app.models.user import User
 from app.services.places_service import PlacesService
 
@@ -29,6 +30,9 @@ class AdminService:
             active_places = Location.query.filter(Location.status == 'ACTIVE').count()
             total_itineraries = SavedItinerary.query.count()
             total_chat_sessions = ChatSession.query.count()
+            total_posts = Post.query.count()
+            total_comments = Comment.query.count()
+            total_reviews = Review.query.count()
 
             recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
             recent_places = Location.query.order_by(Location.created_at.desc()).limit(5).all()
@@ -51,6 +55,9 @@ class AdminService:
                     'total_chat_sessions': total_chat_sessions,
                     'new_users_30_days': new_users_count,
                     'category_stats': category_stats,
+                    'total_posts': total_posts,
+                    'total_comments': total_comments,
+                    'total_reviews': total_reviews,
                 },
                 'recent_users': [user.to_dict() for user in recent_users],
                 'recent_places': PlacesService.serialize_places_summary(recent_places),
@@ -141,8 +148,6 @@ class AdminService:
             db.session.rollback()
             return {'error': str(e)}, 500
 
-
-
     @staticmethod
     def get_analytics():
         try:
@@ -178,6 +183,149 @@ class AdminService:
         except Exception as e:
             return {'error': str(e)}, 500
 
+    # ─── Posts Management ───────────────────────────────────────────────────────
+
+    @staticmethod
+    def get_posts(params):
+        try:
+            page = int(params.get('page', 1))
+            per_page = int(params.get('per_page', 20))
+            search = (params.get('search') or '').strip()
+
+            query = Post.query
+            if search:
+                term = f'%{search}%'
+                query = query.filter(or_(
+                    Post.title.ilike(term),
+                    Post.content.ilike(term),
+                ))
+
+            pagination = query.order_by(Post.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+            return {
+                'posts': [p.to_dict() for p in pagination.items],
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'current_page': page,
+            }, 200
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def delete_post(post_id):
+        try:
+            post = Post.query.get(post_id)
+            if not post:
+                return {'error': 'Không tìm thấy bài viết'}, 404
+            db.session.delete(post)
+            db.session.commit()
+            cache.delete(AdminService.DASHBOARD_CACHE_KEY)
+            return {'message': 'Đã xóa bài viết thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    # ─── Comments Management ────────────────────────────────────────────────────
+
+    @staticmethod
+    def get_comments(params):
+        try:
+            page = int(params.get('page', 1))
+            per_page = int(params.get('per_page', 20))
+            search = (params.get('search') or '').strip()
+
+            query = Comment.query
+            if search:
+                term = f'%{search}%'
+                query = query.filter(Comment.content.ilike(term))
+
+            pagination = query.order_by(Comment.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+            results = []
+            for c in pagination.items:
+                item = c.to_dict()
+                item['post_title'] = c.post.title if c.post else None
+                results.append(item)
+
+            return {
+                'comments': results,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'current_page': page,
+            }, 200
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def delete_comment(comment_id):
+        try:
+            comment = Comment.query.get(comment_id)
+            if not comment:
+                return {'error': 'Không tìm thấy bình luận'}, 404
+            db.session.delete(comment)
+            db.session.commit()
+            cache.delete(AdminService.DASHBOARD_CACHE_KEY)
+            return {'message': 'Đã xóa bình luận thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
+
+    # ─── Reviews Management ─────────────────────────────────────────────────────
+
+    @staticmethod
+    def get_reviews(params):
+        try:
+            page = int(params.get('page', 1))
+            per_page = int(params.get('per_page', 20))
+            search = (params.get('search') or '').strip()
+            location_id = params.get('location_id')
+
+            query = Review.query
+            if location_id:
+                query = query.filter(Review.location_id == int(location_id))
+            if search:
+                term = f'%{search}%'
+                query = query.filter(Review.comment.ilike(term))
+
+            pagination = query.order_by(Review.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+            results = []
+            for r in pagination.items:
+                item = r.to_dict()
+                item['location_name'] = r.location.name if r.location else None
+                results.append(item)
+
+            return {
+                'reviews': results,
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'current_page': page,
+            }, 200
+        except Exception as e:
+            return {'error': str(e)}, 500
+
+    @staticmethod
+    def delete_review(review_id):
+        try:
+            review = Review.query.get(review_id)
+            if not review:
+                return {'error': 'Không tìm thấy đánh giá'}, 404
+
+            location_id = review.location_id
+            db.session.delete(review)
+            db.session.flush()
+
+            # Recalculate rating_avg for the location
+            avg = db.session.query(func.avg(Review.rating)).filter_by(location_id=location_id).scalar()
+            location = Location.query.get(location_id)
+            if location:
+                location.rating_avg = round(avg, 1) if avg else 0
+
+            db.session.commit()
+            cache.delete(AdminService.DASHBOARD_CACHE_KEY)
+            return {'message': 'Đã xóa đánh giá thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
 
 
 def get_admin_service():

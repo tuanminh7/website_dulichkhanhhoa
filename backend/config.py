@@ -72,6 +72,15 @@ class Config:
     AI_MAX_TOKENS = 2048
     AI_TEMPERATURE = 0.7
 
+    # Mail
+    MAIL_SERVER = env_value('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(env_value('MAIL_PORT', 587))
+    MAIL_USE_TLS = env_value('MAIL_USE_TLS', 'True') == 'True'
+    MAIL_USE_SSL = env_value('MAIL_USE_SSL', 'False') == 'True'
+    MAIL_USERNAME = env_value('MAIL_USERNAME')
+    MAIL_PASSWORD = env_value('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = env_value('MAIL_DEFAULT_SENDER', MAIL_USERNAME)
+
     @staticmethod
     def init_app(app):
         os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)

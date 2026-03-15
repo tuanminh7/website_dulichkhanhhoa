@@ -22,10 +22,14 @@ const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const ManageLocations = lazy(() => import('./pages/admin/ManageLocations'));
 const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const ManageCategories = lazy(() => import('./pages/admin/ManageCategories'));
+const ManagePosts = lazy(() => import('./pages/admin/ManagePosts'));
+const ManageComments = lazy(() => import('./pages/admin/ManageComments'));
+const ManageReviews = lazy(() => import('./pages/admin/ManageReviews'));
+const ForgotPassword = lazy(() => import('./pages/guest/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/guest/ResetPassword'));
 const NewsList = lazy(() => import('./pages/News/NewsList'));
 const NewsDetail = lazy(() => import('./pages/News/NewsDetail'));
 const CreatePost = lazy(() => import('./pages/News/CreatePost'));
-const ForgotPassword = lazy(() => import('./pages/guest/ForgotPassword'));
 
 const RouteFallback = () => (
   <div className="min-h-screen pt-24 flex items-center justify-center bg-gray-50 text-center">
@@ -46,7 +50,9 @@ function App() {
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
-            <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
             <Route path="itineraries" element={<ProtectedRoute><Itineraries /></ProtectedRoute>} />
             <Route path="locations" element={<Locations />} />
             <Route path="locations/:id" element={<LocationDetail />} />
@@ -60,6 +66,7 @@ function App() {
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
             <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -68,6 +75,9 @@ function App() {
             <Route path="locations" element={<ManageLocations />} />
             <Route path="users" element={<ManageUsers />} />
             <Route path="categories" element={<ManageCategories />} />
+            <Route path="posts" element={<ManagePosts />} />
+            <Route path="comments" element={<ManageComments />} />
+            <Route path="reviews" element={<ManageReviews />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

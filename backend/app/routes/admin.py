@@ -56,3 +56,65 @@ def get_analytics():
     result, status_code = admin_service.get_analytics()
     return jsonify(result), status_code
 
+
+# ─── Posts Management ─────────────────
+
+@bp.route('/posts', methods=['GET'])
+@jwt_admin_required
+def get_posts():
+    params = request.args.to_dict()
+    if 'page' in params:
+        params['page'] = int(params['page'])
+    if 'per_page' in params:
+        params['per_page'] = int(params['per_page'])
+    result, status_code = admin_service.get_posts(params)
+    return jsonify(result), status_code
+
+
+@bp.route('/posts/<post_id>', methods=['DELETE'])
+@jwt_admin_required
+def delete_post(post_id):
+    result, status_code = admin_service.delete_post(post_id)
+    return jsonify(result), status_code
+
+
+# ─── Comments Management ────────────
+
+@bp.route('/comments', methods=['GET'])
+@jwt_admin_required
+def get_comments():
+    params = request.args.to_dict()
+    if 'page' in params:
+        params['page'] = int(params['page'])
+    if 'per_page' in params:
+        params['per_page'] = int(params['per_page'])
+    result, status_code = admin_service.get_comments(params)
+    return jsonify(result), status_code
+
+
+@bp.route('/comments/<comment_id>', methods=['DELETE'])
+@jwt_admin_required
+def delete_comment(comment_id):
+    result, status_code = admin_service.delete_comment(comment_id)
+    return jsonify(result), status_code
+
+
+# ─── Reviews Management ─────────────
+
+@bp.route('/reviews', methods=['GET'])
+@jwt_admin_required
+def get_reviews():
+    params = request.args.to_dict()
+    if 'page' in params:
+        params['page'] = int(params['page'])
+    if 'per_page' in params:
+        params['per_page'] = int(params['per_page'])
+    result, status_code = admin_service.get_reviews(params)
+    return jsonify(result), status_code
+
+
+@bp.route('/reviews/<int:review_id>', methods=['DELETE'])
+@jwt_admin_required
+def delete_review(review_id):
+    result, status_code = admin_service.delete_review(review_id)
+    return jsonify(result), status_code

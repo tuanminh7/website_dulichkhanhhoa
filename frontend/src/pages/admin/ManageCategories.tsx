@@ -1,15 +1,30 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Edit2, Loader2, Plus, Tag, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { categoryService } from '../../services/api';
 import type { Category } from '../../types';
+import Pagination from '../../components/common/Pagination';
 
 const ManageCategories: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [formData, setFormData] = useState({ name: '', type: 'ATTRACTION' as any, icon: '' });
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
         fetchCategories();
@@ -65,6 +80,12 @@ const ManageCategories: React.FC = () => {
         setIsModalOpen(true);
     };
 
+    const totalPages = Math.ceil(categories.length / itemsPerPage);
+    const paginatedCategories = categories.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,8 +108,8 @@ const ManageCategories: React.FC = () => {
                             <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-4">
-                            {categories.map((cat) => (
+                        <div className="grid grid-cols-1 gap-4 mb-8">
+                            {paginatedCategories.map((cat) => (
                                 <div key={cat.id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl transition-all group">
                                     <div className="flex items-center">
                                         <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 mr-4">
@@ -117,6 +138,12 @@ const ManageCategories: React.FC = () => {
                             ))}
                         </div>
                     )}
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </div>
 

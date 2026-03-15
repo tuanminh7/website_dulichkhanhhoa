@@ -12,7 +12,7 @@ const Hero: React.FC = () => {
             <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
                 style={{
-                    backgroundImage: "url('https://static.homedy.com/src/images/location-reviews/khanh-hoa/nha-trang/1.jpg')",
+                    backgroundImage: "url('/src/assets/image/banner-4.jpg')",
                 }}
             >
                 <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60" />
@@ -26,8 +26,8 @@ const Hero: React.FC = () => {
                     transition={{ duration: .8 }}
                     className="max-w-4xl"
                 >
-                    <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight  uppercase">
-                        <TextType
+                    <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-[1.3] tracking-tight uppercase">
+                        <TextType className='text-[32px] md:text-5xl '
                             text={["vẻ đẹp tuyệt diệu", "khám phá", "du lịch"]}
                             typingSpeed={75}
                             pauseDuration={1500}
@@ -39,13 +39,9 @@ const Hero: React.FC = () => {
                             cursorBlinkDuration={0.5}
                         />
                         <br />
-                        {/* Vẻ đẹp
-                        <br />
-                        <span className="text-emerald-400">Tuyệt diệu</span>
-                        <br /> */}
                         <SplitText
+                            className="text-cyan-300 mt-5"
                             text="Khánh Hòa"
-                            className="font-semibold text-center text-cyan-300"
                             delay={200}
                             duration={1.2}
                             ease="power3.out"
@@ -106,17 +102,6 @@ const Hero: React.FC = () => {
                     </div>
                 </motion.div>
             </div>
-
-            {/* Scroll indicator */}
-            <motion.div
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50"
-            >
-                <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center p-1">
-                    <div className="w-1.5 h-1.5 bg-white/50 rounded-full" />
-                </div>
-            </motion.div>
         </div>
     );
 };

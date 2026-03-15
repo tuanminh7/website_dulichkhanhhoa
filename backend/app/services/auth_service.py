@@ -1,17 +1,19 @@
 import math
 import re
+import uuid
 from datetime import datetime
 
-from app import cache, db
-from app.models.user import User
+from flask import current_app, render_template_string
 from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_mail import Message
 
+from app import cache, db, mail
+from app.models.user import User
 
 
 def validate_email(email) -> bool:
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
-
 
 
 def validate_password(password) -> tuple[bool, str | None]:
@@ -83,9 +85,61 @@ class AuthService:
     def request_password_reset(email):
         if not email or not validate_email(email):
             return {'error': 'Email không hợp lệ'}, 400
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # Generate token and store in Redis
+            token = str(uuid.uuid4())
+            # TTL 1 hour
+            cache.set(f'reset_token:{token}', user.id, ex=3600)
+
+            # Send Email
+            try:
+                # Frontend URL should be configurable, for now assume localhost:5173
+                reset_url = f"http://localhost:5173/reset-password?token={token}"
+                msg = Message(
+                    "Đặt lại mật khẩu - Du lịch Khánh Hòa",
+                    recipients=[email],
+                    body=f"Xin chào {user.fullname},\n\nĐể đặt lại mật khẩu của bạn, vui lòng nhấp vào liên kết sau (có hiệu lực trong 1 giờ):\n{reset_url}\n\nNếu bạn không yêu cầu điều này, hãy bỏ qua email này."
+                )
+                mail.send(msg)
+            except Exception as e:
+                current_app.logger.error(f"Failed to send reset email: {e}")
+                # We still return 200 for security reasons to not leak email existence,
+                # but might want to log this.
+
         return {
             'message': 'Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi tới hộp thư của bạn.'
         }, 200
+
+    @staticmethod
+    def reset_password(token, new_password):
+        try:
+            if not token:
+                return {'error': 'Token không hợp lệ'}, 400
+
+            user_id = cache.get(f'reset_token:{token}')
+            if not user_id:
+                return {'error': 'Token đã hết hạn hoặc không hợp lệ'}, 400
+
+            is_valid, error_msg = validate_password(new_password)
+            if not is_valid:
+                return {'error': error_msg}, 400
+
+            user = User.query.get(user_id)
+            if not user:
+                return {'error': 'Người dùng không tồn tại'}, 404
+
+            user.set_password(new_password)
+            db.session.commit()
+
+            # Invalidate token
+            cache.delete(f'reset_token:{token}')
+
+            return {'message': 'Đổi mật khẩu thành công'}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {'error': str(e)}, 500
 
     @staticmethod
     def change_password(user, old_password, new_password):
@@ -125,7 +179,6 @@ class AuthService:
         except Exception as e:
             db.session.rollback()
             return {'error': str(e)}, 500
-
 
 
 def get_auth_service():

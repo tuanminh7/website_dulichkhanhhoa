@@ -1,13 +1,29 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminService } from '../../services/api';
 import type { User } from '../../types';
 import { Search, UserPlus, MoreVertical, Shield, Mail, Phone, Calendar, X, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Pagination from '../../components/common/Pagination';
 
 const ManageUsers: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [users, setUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     // Add Admin modal state
     const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
@@ -21,13 +37,21 @@ const ManageUsers: React.FC = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [currentPage, searchTerm]);
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const res = await adminService.getUsers();
-            setUsers(res.data.users || res.data);
+            const res = await adminService.getUsers({
+                page: currentPage,
+                per_page: itemsPerPage,
+                search: searchTerm || undefined
+            });
+            const data = res.data;
+            setUsers(data.users || data);
+            if (data.pages) {
+                setTotalPages(data.pages);
+            }
         } catch (error) {
             console.error('Error fetching users:', error);
         } finally {
@@ -74,10 +98,7 @@ const ManageUsers: React.FC = () => {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const paginatedUsers = users;
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -104,7 +125,10 @@ const ManageUsers: React.FC = () => {
                                 placeholder="Tìm theo tên hoặc email..."
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
                     </div>
@@ -115,7 +139,7 @@ const ManageUsers: React.FC = () => {
                                 <div key={i} className="h-64 bg-gray-50 animate-pulse rounded-4xl" />
                             ))
                         ) : (
-                            filteredUsers.map((user) => (
+                            paginatedUsers.map((user) => (
                                 <motion.div
                                     key={user.id}
                                     initial={{ opacity: 0, scale: 0.95 }}
@@ -196,12 +220,18 @@ const ManageUsers: React.FC = () => {
                         )}
                     </div>
 
-                    {!loading && filteredUsers.length === 0 && (
+                    {!loading && users.length === 0 && (
                         <div className="text-center py-16 text-gray-400">
                             <UserPlus className="w-12 h-12 mx-auto mb-3 opacity-30" />
                             <p className="font-bold">Không tìm thấy người dùng</p>
                         </div>
                     )}
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </div>
 

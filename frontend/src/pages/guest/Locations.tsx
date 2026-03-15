@@ -1,25 +1,50 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { locationService, categoryService } from '../../services/api';
 import type { Location, Category } from '../../types';
 import { Search, MapPin, Star, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import Pagination from '../../components/common/Pagination';
 
 const Locations: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [locations, setLocations] = useState<Location[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
                 const [locRes, catRes] = await Promise.all([
-                    locationService.getAll({ status: 'ACTIVE' }),
+                    locationService.getAll({
+                        status: 'ACTIVE',
+                        page: currentPage,
+                        per_page: itemsPerPage,
+                        category: selectedCategory ? categories.find(c => c.id === selectedCategory)?.type : undefined,
+                        search: searchTerm || undefined
+                    }),
                     categoryService.getAll()
                 ]);
-                setLocations(locRes.data as any);
+                setLocations(locRes.data);
+                if (locRes.meta) {
+                    setTotalPages(locRes.meta.pages);
+                }
                 setCategories(catRes.data);
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -28,15 +53,15 @@ const Locations: React.FC = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [currentPage, selectedCategory, searchTerm]);
 
-    const filteredLocations = locations.filter(loc => {
-        if (!loc) return false;
-        const matchesCategory = selectedCategory ? loc.category_id === selectedCategory : true;
-        const matchesSearch = (loc.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (loc.address || '').toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesCategory && matchesSearch;
-    });
+    // useEffect(() => {
+    //     if (searchParams.get('page')) {
+    //         setCurrentPage(1);
+    //     }
+    // }, [selectedCategory, searchTerm]);
+
+    const paginatedLocations = locations;
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -55,14 +80,20 @@ const Locations: React.FC = () => {
                             type="text"
                             placeholder="Tìm kiếm địa điểm, địa chỉ..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                         />
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar outline-none">
                         <button
-                            onClick={() => setSelectedCategory(null)}
+                            onClick={() => {
+                                setSelectedCategory(null);
+                                setCurrentPage(1);
+                            }}
                             className={`px-6 py-4 rounded-2xl font-semibold whitespace-nowrap transition-all ${!selectedCategory ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white text-gray-600 border border-gray-100 hover:border-blue-200'}`}
                         >
                             Tất cả
@@ -70,7 +101,10 @@ const Locations: React.FC = () => {
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
-                                onClick={() => setSelectedCategory(cat.id)}
+                                onClick={() => {
+                                    setSelectedCategory(cat.id);
+                                    setCurrentPage(1);
+                                }}
                                 className={`px-6 py-4 rounded-2xl font-semibold whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white text-gray-600 border border-gray-100 hover:border-blue-200'}`}
                             >
                                 {cat.name}
@@ -88,8 +122,8 @@ const Locations: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <AnimatePresence>
-                            {filteredLocations.map((loc) => {
+                        <AnimatePresence mode="popLayout">
+                            {paginatedLocations.map((loc) => {
                                 if (!loc) return null;
                                 return (
                                     <motion.div
@@ -143,7 +177,13 @@ const Locations: React.FC = () => {
                     </div>
                 )}
 
-                {!loading && filteredLocations.length === 0 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
+
+                {!loading && locations.length === 0 && (
                     <div className="text-center py-20">
                         <h3 className="text-2xl font-bold text-gray-400">Không tìm thấy địa điểm nào</h3>
                         <p className="text-gray-500 mt-2">Hãy thử đổi từ khóa hoặc bộ lọc khác.</p>

@@ -19,7 +19,7 @@ interface TextTypeProps {
     loop?: boolean;
     textColors?: string[];
     variableSpeed?: { min: number; max: number };
-    variableSpeedEnabled?: boolean; // Thêm dòng này vào
+    variableSpeedEnabled?: boolean;
     onSentenceComplete?: (sentence: string, index: number) => void;
     startOnVisible?: boolean;
     reverseMode?: boolean;
