@@ -116,10 +116,19 @@ api.interceptors.response.use(
 );
 
 export const locationService = {
-    getAll: (params?: Record<string, unknown>) => getCached<Location[] | { places: Location[] }>('/locations', { params }).then((response) => ({
-        ...response,
-        data: Array.isArray(response.data) ? response.data : (response.data.places ?? []),
-    })),
+    getAll: (params?: Record<string, unknown>) => getCached<any>('/locations', { params }).then((response) => {
+        const rawData = response.data;
+        return {
+            ...response,
+            data: Array.isArray(rawData) ? rawData : (rawData.places ?? []),
+            meta: Array.isArray(rawData) ? undefined : {
+                total: rawData.total,
+                pages: rawData.pages,
+                current_page: rawData.current_page,
+                per_page: rawData.per_page
+            }
+        };
+    }),
     getById: (id: number) => getCached<Location>(`/locations/${id}`),
     create: async (data: FormData | Record<string, unknown>) => {
         const response = await api.post<{ message: string; place: Location }>('/locations', data);
@@ -210,6 +219,7 @@ export const authService = {
     register: (data: any) => api.post('/auth/register', data),
     getMe: () => getCached<User>('/auth/me', undefined, AUTH_CACHE_TTL),
     forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+    resetPassword: (data: any) => api.post('/auth/reset-password', data),
     logout: async () => {
         const response = await api.post('/auth/logout');
         invalidateCache('GET:/auth/me:');
@@ -278,6 +288,24 @@ export const adminService = {
         return response;
     },
     getAnalytics: () => getCached<any>('/admin/analytics'),
+    // Posts
+    getPosts: (params?: any) => api.get<any>('/admin/posts', { params }),
+    deletePost: async (postId: string) => {
+        const response = await api.delete(`/admin/posts/${postId}`);
+        return response;
+    },
+    // Comments
+    getComments: (params?: any) => api.get<any>('/admin/comments', { params }),
+    deleteComment: async (commentId: string) => {
+        const response = await api.delete(`/admin/comments/${commentId}`);
+        return response;
+    },
+    // Reviews
+    getReviews: (params?: any) => api.get<any>('/admin/reviews', { params }),
+    deleteReview: async (reviewId: number) => {
+        const response = await api.delete(`/admin/reviews/${reviewId}`);
+        return response;
+    },
 };
 
 export default api;

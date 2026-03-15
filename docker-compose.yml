@@ -52,10 +52,7 @@ services:
       - ~/webapp/uploads:/webapp/static/uploads
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NGINX_CONF: ${FRONTEND_NGINX_CONF:-nginx.conf}
+    build: ./frontend
     restart: always
     image: ghcr.io/${REPO_OWNER:-tuanminh7}/react-frontend:latest
     environment:

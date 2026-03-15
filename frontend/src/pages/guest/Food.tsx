@@ -1,13 +1,27 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { dishService, locationService } from '../../services/api';
 import type { Dish, Location } from '../../types';
 import { MapPin, ArrowRight, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Pagination from '../../components/common/Pagination';
 
 const Food: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [dishes, setDishes] = useState<Dish[]>([]);
     const [restaurants, setRestaurants] = useState<Location[]>([]);
     const [loading, setLoading] = useState(true);
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -74,11 +88,11 @@ const Food: React.FC = () => {
 
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-8">Địa điểm ăn uống nổi bật</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                         {loading ? (
                             [1, 2, 3].map(i => <div key={i} className="h-80 bg-gray-100 animate-pulse rounded-3xl" />)
                         ) : (
-                            restaurants.map(rest => {
+                            restaurants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(rest => {
                                 if (!rest) return null;
                                 return (
                                     <div key={rest.id} className="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 group">
@@ -112,6 +126,11 @@ const Food: React.FC = () => {
                             })
                         )}
                     </div>
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={Math.ceil(restaurants.length / itemsPerPage)}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </div>
         </div>

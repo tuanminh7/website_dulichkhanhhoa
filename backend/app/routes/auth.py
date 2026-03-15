@@ -73,6 +73,15 @@ def forgot_password():
     return jsonify(result), status_code
 
 
+@bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json() or {}
+    token = data.get('token')
+    new_password = data.get('new_password')
+    result, status_code = AuthService.reset_password(token, new_password)
+    return jsonify(result), status_code
+
+
 @bp.route('/logout', methods=['POST'])
 @jwt_required(verify_type=False)
 def logout():

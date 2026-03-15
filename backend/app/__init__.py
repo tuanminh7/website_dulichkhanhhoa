@@ -5,6 +5,7 @@ import time
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_login import LoginManager
+from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from redis import Redis
@@ -18,6 +19,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 jwt = JWTManager()
+mail = Mail()
 
 
 class ResilientCache:
@@ -172,6 +174,7 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+    mail.init_app(app)
 
     from app import models  # noqa: F401
     from app.routes import main, auth, places, ai, maps, admin, user, interactions, dishes, news

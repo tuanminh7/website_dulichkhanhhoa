@@ -21,6 +21,63 @@ const Home: React.FC = () => {
         <div className="pb-0 overflow-x-hidden pt-0 mt-[-80px]">
             <Hero />
 
+            {/* About Section */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-32">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <span className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs mb-4 block">Về chúng tôi</span>
+                        <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-8 leading-tight tracking-tight capitalize">
+                            Cổng thông tin du lịch <br />
+                            <span className="text-blue-600">
+                                Khánh Hòa thông minh</span>
+                        </h2>
+                        <div className="space-y-6 text-gray-500 text-lg font-medium leading-relaxed">
+                            <p>
+                                Chào mừng bạn đến với nền tảng du lịch hiện đại nhất khu vực miền Trung. Chúng tôi không chỉ cung cấp thông tin, mà còn là người bạn đồng hành tin cậy trong mọi hành trình khám phá vẻ đẹp của xứ sở Trầm Hương.
+                            </p>
+                            <p>
+                                Tích hợp công nghệ trí tuệ nhân tạo (AI) tiên tiến, chúng tôi giúp bạn cá nhân hóa lịch trình, tìm kiếm những điểm đến ẩn mình và thưởng thức tinh hoa ẩm thực địa phương một cách trọn vẹn nhất.
+                            </p>
+                        </div>
+
+                        <div className="mt-12 grid grid-cols-2 gap-8">
+                            <div>
+                                <h4 className="text-3xl font-black text-gray-900 mb-2">100+</h4>
+                                <p className="text-gray-400 text-sm uppercase tracking-widest font-bold">Điểm đến</p>
+                            </div>
+                            <div>
+                                <h4 className="text-3xl font-black text-gray-900 mb-2">24/7</h4>
+                                <p className="text-gray-400 text-sm uppercase tracking-widest font-bold">Hỗ trợ AI</p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="relative  sm:block hidden"
+                    >
+                        <div className="aspect-square rounded-[3rem] overflow-hidden shadow-2xl">
+                            <img
+                                src="https://images.unsplash.com/photo-1559592413-7cea8378179b?q=80&w=2000&auto=format&fit=crop"
+                                alt="Khánh Hòa Overview"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        {/* Decorative element */}
+                        <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-100 rounded-full -z-10 mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
+                        <div className="absolute -top-10 -left-10 w-48 h-48 bg-teal-100 rounded-full -z-10 mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000" />
+                    </motion.div>
+                </div>
+            </section>
+
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-24 relative z-10 ">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {categories.map((cat, index) => (
@@ -54,7 +111,10 @@ const Home: React.FC = () => {
                 <div className="text-center mb-20">
                     <span className="text-blue-600 font-black uppercase tracking-[0.3em] text-xs mb-4 block">Tại sao chọn chúng tôi</span>
                     <h2 className="text-4xl md:text-6xl font-black text-gray-900 leading-tight capitalize">
-                        Trải nghiệm du lịch <br /> thế hệ mới</h2>
+                        Trải nghiệm du lịch
+                        <br />
+                        thế hệ mới
+                    </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
                     {features.map((f, i) => (
@@ -158,7 +218,7 @@ const Home: React.FC = () => {
             {/* Destinations Highlight */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-48 text-center pb-32">
                 <span className="text-orange-600 font-black uppercase tracking-[0.3em] text-xs mb-4 block">Khám phá tuyệt phẩm</span>
-                <h2 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 leading-tight tracking-tighter capitalize">Địa danh biểu tượng</h2>
+                <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-8 leading-tight tracking-tighter capitalize">Địa danh biểu tượng</h2>
                 <p className="text-gray-500 max-w-2xl mx-auto mb-20 text-xl font-medium leading-relaxed">
                     Khánh Hòa là sự hòa quyện hoàn hảo giữa thiên nhiên hùng vĩ và những giá trị văn hóa lâu đời.
                 </p>
@@ -205,7 +265,7 @@ const Home: React.FC = () => {
             <section className="bg-blue-500 py-32 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-white/10 to-transparent opacity-50" />
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                    <h2 className="text-4xl md:text-6xl font-black text-white mb-8 leading-tight">Sẵn sàng để bắt đầu hành trình của bạn?</h2>
+                    <h2 className="text-4xl md:text-5xl font-black text-white mb-8 leading-tight">Sẵn sàng để bắt đầu <br />hành trình của bạn?</h2>
                     <p className="text-blue-100 text-xl mb-12 font-medium">Hàng nghìn du khách đã sử dụng dịch vụ của chúng tôi để có một kỳ nghỉ tuyệt vời nhất.</p>
                     <div className="flex flex-col sm:flex-row justify-center gap-6">
                         <Link to="/login" className="px-10 py-5 bg-white text-blue-600 font-black rounded-3xl hover:bg-gray-100 transition-all shadow-2xl active:scale-95 text-lg">

@@ -1,20 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { newsService } from '../../services/api';
 import type { Post } from '../../types';
 import { MessageSquare, ThumbsUp, Calendar, User, Search, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Pagination from '../../components/common/Pagination';
 
 const NewsList: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
         const fetchPosts = async () => {
+            setLoading(true);
             try {
-                const response = await newsService.getAll();
+                const response = await newsService.getAll({
+                    page: currentPage,
+                    per_page: itemsPerPage,
+                    search: searchTerm || undefined
+                });
                 setPosts(response.data.posts);
+                setTotalPages(response.data.pages || 1);
+                setTotal(response.data.total || 0);
             } catch (error) {
                 console.error('Error fetching posts:', error);
             } finally {
@@ -22,12 +45,16 @@ const NewsList: React.FC = () => {
             }
         };
         fetchPosts();
-    }, []);
+    }, [currentPage, searchTerm]);
 
-    const filteredPosts = posts.filter(post =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // useEffect(() => {
+    //     if (searchParams.get('page')) {
+    //         setCurrentPage(1);
+    //     }
+    // }, [searchTerm]);
+
+    const filteredPosts = posts;
+    const paginatedPosts = posts;
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -36,7 +63,13 @@ const NewsList: React.FC = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">Tin tức & Review</h1>
-                        <p className="text-gray-600 text-lg">Những trải nghiệm du lịch thực tế từ cộng đồng.</p>
+                        <p className="text-gray-600 text-lg">
+                            {total > 0 ? (
+                                <>Hiện có <span className="font-bold text-blue-600">{total}</span> bài viết chia sẻ trải nghiệm.</>
+                            ) : (
+                                "Những trải nghiệm du lịch thực tế từ cộng đồng."
+                            )}
+                        </p>
                     </div>
                     <Link
                         to="/news/create"
@@ -54,7 +87,10 @@ const NewsList: React.FC = () => {
                         type="text"
                         placeholder="Tìm kiếm bài viết..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                 </div>
@@ -67,9 +103,9 @@ const NewsList: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <AnimatePresence>
-                            {filteredPosts.map((post) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                        <AnimatePresence mode="popLayout">
+                            {paginatedPosts.map((post) => (
                                 <motion.div
                                     key={post.id}
                                     layout
@@ -133,6 +169,12 @@ const NewsList: React.FC = () => {
                         </AnimatePresence>
                     </div>
                 )}
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
 
                 {!loading && filteredPosts.length === 0 && (
                     <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">

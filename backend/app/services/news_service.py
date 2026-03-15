@@ -37,6 +37,15 @@ class NewsService:
 
         page = params.get('page', 1)
         per_page = params.get('per_page', 10)
+        search = (params.get('search') or '').strip()
+
+        if search:
+            from sqlalchemy import or_
+            term = f'%{search}%'
+            query = query.filter(or_(
+                Post.title.ilike(term),
+                Post.content.ilike(term),
+            ))
 
         posts_pagination = query.order_by(Post.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False)

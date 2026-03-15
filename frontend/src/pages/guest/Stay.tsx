@@ -1,14 +1,28 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { locationService } from '../../services/api';
 import type { Location } from '../../types';
 import { MapPin, Star, Search, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import Pagination from '../../components/common/Pagination';
 
 const Stay: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [accommodations, setAccommodations] = useState<Location[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -30,6 +44,16 @@ const Stay: React.FC = () => {
             acc.address?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
+    // useEffect(() => {
+    //     setCurrentPage(1);
+    // }, [searchTerm]);
+
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    const paginatedItems = filtered.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -45,7 +69,10 @@ const Stay: React.FC = () => {
                         type="text"
                         placeholder="Tìm tên khách sạn, khu vực..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                 </div>
@@ -56,8 +83,8 @@ const Stay: React.FC = () => {
                         {[1, 2, 3].map(i => <div key={i} className="h-[450px] bg-gray-200 animate-pulse rounded-3xl" />)}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filtered.map((acc) => {
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                        {paginatedItems.map((acc) => {
                             if (!acc) return null;
                             return (
                             <motion.div
@@ -111,6 +138,12 @@ const Stay: React.FC = () => {
                         })}
                     </div>
                 )}
+
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
 
                 {!loading && filtered.length === 0 && (
                     <div className="text-center py-20">

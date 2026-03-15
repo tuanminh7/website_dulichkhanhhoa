@@ -59,3 +59,8 @@ def index():
         'message': 'Tourism API running',
         'health': '/api/health'
     })
+
+
+@bp.route('/api/send-mail', methods=['POST'])
+def send_mail():
+    pass

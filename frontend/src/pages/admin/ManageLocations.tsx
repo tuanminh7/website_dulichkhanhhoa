@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { locationService, categoryService } from '../../services/api';
 import type { Location, Category } from '../../types';
 import { Plus, Search, Edit2, Trash2, MapPin, Tag, Upload, X, Star, ImagePlus } from 'lucide-react';
+import Pagination from '../../components/common/Pagination';
 
 interface LocationImage {
     id: number;
@@ -10,6 +12,7 @@ interface LocationImage {
 }
 
 const ManageLocations: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [locations, setLocations] = useState<Location[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +28,20 @@ const ManageLocations: React.FC = () => {
         status: 'ACTIVE'
     });
 
+    const currentPage = parseInt(searchParams.get('page') || '1');
+    const [totalPages, setTotalPages] = useState(1);
+    const itemsPerPage = 15;
+
+    const setCurrentPage = (page: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (page === 1) {
+            newParams.delete('page');
+        } else {
+            newParams.set('page', page.toString());
+        }
+        setSearchParams(newParams);
+    };
+
     // Multi-image state
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [newFilePreviews, setNewFilePreviews] = useState<string[]>([]);
@@ -32,18 +49,21 @@ const ManageLocations: React.FC = () => {
     const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
     const fetchData = async () => {
         setLoading(true);
         try {
             const [locRes, catRes] = await Promise.all([
-                locationService.getAll(),
+                locationService.getAll({
+                    page: currentPage,
+                    per_page: itemsPerPage,
+                    search: searchTerm || undefined
+                }),
                 categoryService.getAll()
             ]);
             setLocations(locRes.data);
+            if (locRes.meta) {
+                setTotalPages(locRes.meta.pages);
+            }
             setCategories(catRes.data);
         } catch (error) {
             console.error('Error fetching admin data:', error);
@@ -51,6 +71,10 @@ const ManageLocations: React.FC = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+    }, [currentPage, searchTerm]);
 
     const openModal = async (loc?: Location) => {
         if (loc) {
@@ -168,10 +192,6 @@ const ManageLocations: React.FC = () => {
         }
     };
 
-    const filteredLocations = locations.filter(loc =>
-        loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        loc.address?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     return (
         <div className="pt-24 pb-20 bg-gray-50 min-h-screen">
@@ -201,7 +221,10 @@ const ManageLocations: React.FC = () => {
                                 placeholder="Tìm kiếm địa điểm..."
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setCurrentPage(1);
+                                }}
                             />
                         </div>
                     </div>
@@ -229,7 +252,7 @@ const ManageLocations: React.FC = () => {
                                         </tr>
                                     ))
                                 ) : (
-                                    filteredLocations.map((loc) => {
+                                    locations.map((loc) => {
                                         const imgs: LocationImage[] = (loc as any).images || [];
                                         return (
                                             <tr key={loc.id} className="group hover:bg-gray-50 transition-all">
@@ -306,15 +329,22 @@ const ManageLocations: React.FC = () => {
                                 )}
                             </tbody>
                         </table>
-                        {!loading && filteredLocations.length === 0 && (
+                        {!loading && locations.length === 0 && (
                             <div className="text-center py-16 text-gray-400">
                                 <MapPin className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                                <p className="font-bold">Chưa có địa điểm nào</p>
+                                <p className="font-bold">Không tìm thấy địa điểm nào</p>
                             </div>
                         )}
                     </div>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </div>
+
 
             {/* Modal */}
             {isModalOpen && (
