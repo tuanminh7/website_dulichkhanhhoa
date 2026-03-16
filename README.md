@@ -351,6 +351,253 @@ make docker-down
 | POST | `/api/ai/chat` | Chat với AI | No |
 | POST | `/api/ai/itinerary` | Tạo lịch trình | No |
 | POST | `/api/ai/suggest` | Gợi ý địa điểm | No |
+# AI Tourism Chatbot - Khánh Hòa Travel AI
+
+Tính năng chatbot tư vấn du lịch thông minh tích hợp Google Gemini AI, chuyên về du lịch Khánh Hòa và Ninh Thuận.
+
+---
+
+## Tổng quan
+
+Chatbot sử dụng mô hình **Google Gemini 2.5 Flash** để tư vấn du lịch theo thời gian thực (streaming). Hệ thống có khả năng thăm dò sở thích người dùng, gợi ý địa điểm phù hợp kèm ảnh minh họa, và lên lịch trình chi tiết theo yêu cầu.
+
+---
+
+## Kiến trúc hệ thống
+
+```
+Frontend (React/TypeScript)
+    └── Chatbot.tsx          # Giao diện chat, xử lý SSE stream
+    
+Backend (Flask/Python)
+    ├── routes/ai.py         # API endpoints
+    ├── services/ai_service.py   # Tích hợp Gemini API
+    └── models/ai.py         # Database models
+    
+Database
+    ├── chat_sessions        # Phiên hội thoại
+    └── chat_messages        # Lịch sử tin nhắn
+
+Redis
+    └── Rate limiting, Guest limit, Response cache
+```
+
+---
+
+## Cài đặt
+
+### Yêu cầu
+
+- Python 3.10+
+- Node.js 18+
+- Redis (hoặc Docker)
+- Google Gemini API Key
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+Thêm vào file `.env`:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL=gemini-2.5-flash-preview-04-17
+```
+
+Lấy API key miễn phí tại: https://aistudio.google.com/app/apikey
+
+### Redis
+
+```bash
+# Dùng Docker
+docker run -d -p 6379:6379 --restart always redis
+```
+
+### Khởi động
+
+```bash
+# Backend
+cd backend
+python manage.py
+
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Cấu trúc file
+
+```
+backend/
+├── app/
+│   ├── routes/
+│   │   └── ai.py                # API routes
+│   ├── services/
+│   │   └── ai_service.py        # Gemini AI service
+│   ├── models/
+│   │   └── ai.py                # ChatSession, ChatMessage, CostReference
+│   └── data/
+│       └── data_chat.txt        # Knowledge base địa điểm du lịch
+├── static/
+│   └── uploads/
+│       └── images/
+│           └── anh/             # Ảnh minh họa địa điểm (45 ảnh)
+└── .env
+
+frontend/
+└── src/
+    └── components/
+        └── chat/
+            └── Chatbot.tsx      # Component giao diện chat
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Mô tả | Auth |
+|--------|----------|-------|------|
+| POST | `/api/ai/chat` | Gửi tin nhắn, nhận stream SSE | Optional |
+| POST | `/api/ai/sessions` | Tạo phiên hội thoại mới | Optional |
+| GET | `/api/ai/sessions` | Lấy danh sách sessions | Required |
+| GET | `/api/ai/sessions/:id/messages` | Lấy lịch sử tin nhắn | Optional |
+| GET | `/api/ai/img/:id` | Serve ảnh minh họa | Public |
+| POST | `/api/ai/generate-itinerary` | Tạo lịch trình tự động | Public |
+| POST | `/api/ai/suggest-places` | Gợi ý địa điểm | Public |
+| POST | `/api/ai/estimate-cost` | Ước tính chi phí | Public |
+
+### Ví dụ gửi tin nhắn
+
+```bash
+curl -X POST /api/ai/chat \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": 1, "message": "Tư vấn địa điểm du lịch Khánh Hòa"}'
+```
+
+Response trả về dạng **Server-Sent Events (SSE)**:
+
+```
+data: {"session_id": 1}
+data: {"text": "Tuyệt vời! Khánh Hòa có..."}
+data: {"text": " rất nhiều loại hình..."}
+data: {"done": true, "ai_message": {...}}
+```
+
+---
+
+## Tính năng chính
+
+### 1. Tư vấn thông minh theo sở thích
+
+Khi người dùng hỏi chung chung, AI sẽ hỏi thăm dò trước:
+
+```
+User: "Tư vấn địa điểm du lịch Khánh Hòa"
+
+AI: "Bạn muốn loại hình du lịch nào?
+     - Du lịch biển
+     - Nghỉ dưỡng
+     - Sinh thái / Thiên nhiên
+     - Phượt / Khám phá
+     - Cắm trại / Glamping
+     - Ẩm thực và văn hóa"
+```
+
+Sau khi người dùng chọn, AI liệt kê địa điểm phù hợp kèm ảnh minh họa.
+
+### 2. Ảnh minh họa tự động
+
+AI tự động chèn ảnh sau mỗi địa điểm được giới thiệu. Ảnh được phục vụ qua endpoint `/api/ai/img/:id` từ thư mục local.
+
+Hiện có **45 ảnh** bao gồm:
+- Bãi biển, vịnh biển (Vịnh Vĩnh Hy, Điệp Sơn, Bãi Tràng...)
+- Địa điểm văn hóa (Tháp Po Klong Garai, Tháp Bà Ponagar...)
+- Thiên nhiên (Vườn quốc gia Núi Chúa, Rừng thông Khánh Sơn...)
+- Ẩm thực (Bún sứa, Bánh căn...)
+
+### 3. Streaming realtime
+
+Phản hồi được trả về từng chunk qua SSE, người dùng thấy chữ hiện ra dần thay vì chờ toàn bộ.
+
+### 4. Giới hạn khách (Guest Limit)
+
+Người dùng chưa đăng nhập được chat tối đa **3 tin nhắn**. Sau đó hiện modal yêu cầu đăng nhập.
+
+### 5. Rate Limiting
+
+Mỗi user/IP tối đa **5 request/phút**. Lưu trữ bằng Redis.
+
+### 6. Cache phản hồi
+
+Các câu hỏi giống nhau sẽ trả về từ cache Redis (TTL 1 giờ) thay vì gọi lại Gemini API.
+
+### 7. Knowledge Base
+
+AI được nạp dữ liệu từ file `data_chat.txt` chứa thông tin chi tiết về các địa điểm du lịch Ninh Thuận và Khánh Hòa. Dữ liệu này được ưu tiên cao nhất trong câu trả lời.
+
+---
+
+## Cấu hình
+
+| Biến môi trường | Mô tả | Mặc định |
+|----------------|-------|----------|
+| `GEMINI_API_KEY` | API key Google Gemini | Bắt buộc |
+| `GEMINI_MODEL` | Tên model Gemini | `gemini-2.5-flash-preview-04-17` |
+| `AI_TEMPERATURE` | Độ sáng tạo (0.0 - 1.0) | `0.8` |
+| `AI_MAX_TOKENS` | Token tối đa mỗi phản hồi | `8192` |
+
+---
+
+## Xử lý lỗi thường gặp
+
+### Redis không kết nối được
+
+```
+redis.exceptions.ConnectionError: Error 10061 connecting to localhost:6379
+```
+
+Khởi động Redis:
+```bash
+docker run -d -p 6379:6379 redis
+```
+
+### Gemini API timeout / 503
+
+```
+Timeout of 600.0s exceeded
+503 failed to connect to all addresses
+```
+
+Nguyên nhân: mạng bị chặn kết nối tới Google API. Giải pháp:
+- Bật VPN
+- Đổi DNS sang `8.8.8.8`
+- Kiểm tra firewall
+
+### Ảnh không hiển thị (500)
+
+Kiểm tra đường dẫn thư mục ảnh trong `routes/ai.py`:
+```python
+pathlib.Path(r'C:\đường\dẫn\thực\tới\backend\static\uploads\images\anh')
+```
+
+### GEMINI_API_KEY not configured
+
+Kiểm tra file `.env` có đúng vị trí không (cùng thư mục với `config.py`) và key không bị trống.
+
+---
+
+## Phát triển thêm
+
+- Bổ sung knowledge base Khánh Hòa vào `data_chat.txt`
+- Thêm ảnh địa điểm vào thư mục `static/uploads/images/anh/`
+- Tích hợp Google Maps để hiển thị bản đồ địa điểm
+- Thêm tính năng lưu và xuất lịch trình ra PDF
 
 ### Maps
 
