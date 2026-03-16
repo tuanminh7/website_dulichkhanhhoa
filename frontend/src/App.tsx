@@ -9,8 +9,6 @@ import { Toaster } from 'react-hot-toast';
 const Home = lazy(() => import('./pages/guest/Home'));
 const Locations = lazy(() => import('./pages/guest/Locations'));
 const LocationDetail = lazy(() => import('./pages/guest/LocationDetail'));
-const Food = lazy(() => import('./pages/guest/Food'));
-const Stay = lazy(() => import('./pages/guest/Stay'));
 const Chatbot = lazy(() => import('./pages/guest/Chatbot'));
 const CostEstimation = lazy(() => import('./pages/guest/CostEstimation'));
 const Login = lazy(() => import('./pages/guest/Login'));
@@ -30,6 +28,10 @@ const ResetPassword = lazy(() => import('./pages/guest/ResetPassword'));
 const NewsList = lazy(() => import('./pages/News/NewsList'));
 const NewsDetail = lazy(() => import('./pages/News/NewsDetail'));
 const CreatePost = lazy(() => import('./pages/News/CreatePost'));
+const RegisterBusiness = lazy(() => import('./pages/user/RegisterBusiness'));
+const ManageBusinessRegistrations = lazy(() => import('./pages/admin/ManageBusinessRegistrations'));
+const BusinessDashboard = lazy(() => import('./pages/business/BusinessDashboard'));
+const MyBookings = lazy(() => import('./pages/user/MyBookings'));
 
 const RouteFallback = () => (
   <div className="min-h-screen pt-24 flex items-center justify-center bg-gray-50 text-center">
@@ -56,12 +58,13 @@ function App() {
             <Route path="itineraries" element={<ProtectedRoute><Itineraries /></ProtectedRoute>} />
             <Route path="locations" element={<Locations />} />
             <Route path="locations/:id" element={<LocationDetail />} />
-            <Route path="food" element={<Food />} />
-            <Route path="stay" element={<Stay />} />
             <Route path="chatbot" element={<Chatbot />} />
             <Route path="news" element={<NewsList />} />
             <Route path="news/:id" element={<NewsDetail />} />
             <Route path="news/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+            <Route path="register-business" element={<ProtectedRoute><RegisterBusiness /></ProtectedRoute>} />
+            <Route path="business" element={<ProtectedRoute requireBusiness><BusinessDashboard /></ProtectedRoute>} />
+            <Route path="my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
             <Route path="costs" element={<CostEstimation />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
@@ -78,6 +81,7 @@ function App() {
             <Route path="posts" element={<ManagePosts />} />
             <Route path="comments" element={<ManageComments />} />
             <Route path="reviews" element={<ManageReviews />} />
+            <Route path="business" element={<ManageBusinessRegistrations />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

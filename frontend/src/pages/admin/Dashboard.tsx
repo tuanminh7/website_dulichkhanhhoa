@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/api';
-import { Users, MapPin, MessageSquare, TrendingUp, Activity, ArrowUpRight, BarChart3, FileText, Star, MessagesSquare } from 'lucide-react';
+import { Users, MapPin, MessageSquare, ArrowUpRight, BarChart3, FileText, Star, MessagesSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -35,7 +35,7 @@ const Dashboard: React.FC = () => {
 
     const statCards = [
         { title: 'Người dùng', value: s.total_users || 0, icon: Users, color: 'bg-blue-500', bgLight: 'bg-blue-50', trend: `+${s.new_users_30_days || 0} tháng này` },
-        { title: 'Địa điểm', value: s.total_places || 0, icon: MapPin, color: 'bg-teal-500', bgLight: 'bg-teal-50', trend: `${s.active_places || 0} đang hoạt động` },
+        { title: 'Du lịch', value: s.total_places || 0, icon: MapPin, color: 'bg-teal-500', bgLight: 'bg-teal-50', trend: `${s.active_places || 0} đang hoạt động` },
         { title: 'Bài viết', value: s.total_posts || 0, icon: FileText, color: 'bg-violet-500', bgLight: 'bg-violet-50', trend: 'Tin tức & bài đăng' },
         { title: 'Bình luận', value: s.total_comments || 0, icon: MessagesSquare, color: 'bg-pink-500', bgLight: 'bg-pink-50', trend: 'Trên tất cả bài viết' },
         { title: 'Đánh giá', value: s.total_reviews || 0, icon: Star, color: 'bg-amber-500', bgLight: 'bg-amber-50', trend: 'Đánh giá địa điểm' },
@@ -44,6 +44,7 @@ const Dashboard: React.FC = () => {
 
     const quickActions = [
         { to: '/admin/locations', label: 'Quản lý địa điểm' },
+        { to: '/admin/business', label: 'Duyệt đối tác' },
         { to: '/admin/users', label: 'Quản lý người dùng' },
         { to: '/admin/categories', label: 'Quản lý danh mục' },
         { to: '/admin/posts', label: 'Quản lý bài viết' },
@@ -91,14 +92,14 @@ const Dashboard: React.FC = () => {
                     <div className="lg:col-span-2 space-y-8">
                         <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100">
                             <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-2xl font-bold text-gray-900">Địa điểm phổ biến nhất</h2>
+                                <h2 className="text-2xl font-bold text-gray-900">Du lịch phổ biến nhất</h2>
                             </div>
                             <div className="space-y-4">
                                 {(stats?.popular_places || []).slice(0, 5).map((loc: any, idx: number) => (
                                     <div key={idx} className="flex items-center p-4 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-blue-50">
                                         <div className="w-10 h-10 font-black text-xl text-gray-200 mr-4">0{idx + 1}</div>
                                         <div className="grow">
-                                            <p className="font-bold text-gray-800">{loc.name || 'Địa điểm du lịch'}</p>
+                                            <p className="font-bold text-gray-800">{loc.name || 'Du lịch'}</p>
                                             <div className="flex items-center gap-1 mt-1">
                                                 {[1, 2, 3, 4, 5].map(s => (
                                                     <Star key={s} className={`w-3 h-3 ${s <= Math.round(loc.rating_avg || 0) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'}`} />

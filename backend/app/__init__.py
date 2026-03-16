@@ -154,6 +154,30 @@ def ensure_schema_compatibility():
                 connection.execute(text('ALTER TABLE saved_itineraries ADD COLUMN updated_at TIMESTAMP'))
                 connection.execute(text('UPDATE saved_itineraries SET updated_at = created_at WHERE updated_at IS NULL'))
 
+        if 'business_registrations' in table_names:
+            business_columns = {column['name'] for column in inspect(engine).get_columns('business_registrations')}
+            
+            # Add new columns if missing
+            if 'representative_id_front_url' not in business_columns:
+                connection.execute(text('ALTER TABLE business_registrations ADD COLUMN representative_id_front_url VARCHAR(255)'))
+                # If old column exists, migrate data
+                if 'representative_id_url' in business_columns:
+                    connection.execute(text('UPDATE business_registrations SET representative_id_front_url = representative_id_url'))
+            
+            if 'representative_id_back_url' not in business_columns:
+                connection.execute(text('ALTER TABLE business_registrations ADD COLUMN representative_id_back_url VARCHAR(255)'))
+                # If old column exists, migrate data as placeholder for back if needed
+                if 'representative_id_url' in business_columns:
+                    connection.execute(text('UPDATE business_registrations SET representative_id_back_url = representative_id_url'))
+
+            # Drop old column if it exists
+            if 'representative_id_url' in business_columns:
+                try:
+                    connection.execute(text('ALTER TABLE business_registrations DROP COLUMN representative_id_url'))
+                except Exception as e:
+                    # Fallback for older SQLite versions if DROP COLUMN fails (unlikely given 3.45.1)
+                    print(f"Failed to drop column: {e}")
+
         if engine.name == 'postgresql':
             type_exists = connection.execute(text("SELECT 1 FROM pg_type WHERE typname = 'sender_types'")).scalar()
             if type_exists:
@@ -177,7 +201,7 @@ def create_app(config_name=None):
     mail.init_app(app)
 
     from app import models  # noqa: F401
-    from app.routes import main, auth, places, ai, maps, admin, user, interactions, dishes, news
+    from app.routes import main, auth, places, ai, maps, admin, user, interactions, dishes, news, business, admin_business, booking_routes
 
     app.register_blueprint(main.bp)
     app.register_blueprint(auth.bp)
@@ -189,6 +213,9 @@ def create_app(config_name=None):
     app.register_blueprint(news.bp)
     app.register_blueprint(interactions.bp)
     app.register_blueprint(dishes.bp)
+    app.register_blueprint(business.bp)
+    app.register_blueprint(admin_business.bp)
+    app.register_blueprint(booking_routes.bp)
     
     with app.app_context():
         ensure_schema_compatibility()

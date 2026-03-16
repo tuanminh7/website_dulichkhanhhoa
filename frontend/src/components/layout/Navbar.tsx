@@ -6,19 +6,20 @@ import { useAuth } from '../../context/AuthContext';
 
 const Navbar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { user, logout, isAdmin, loading } = useAuth();
+    const { user, logout, isAdmin, isBusiness, loading } = useAuth();
+
+    const navLinks = [
+        { name: 'DU LỊCH', path: '/locations' },
+        { name: 'Tin tức', path: '/news' },
+        { name: 'Tư vấn AI', path: '/chatbot' },
+        ...(isBusiness ? [{ name: 'Quản lý', path: '/business' }] : [{ name: 'Hợp tác', path: '/register-business' }]),
+    ];
 
     const handleLogout = () => {
         logout();
     };
 
-    const navLinks = [
-        { name: 'Điểm đến', path: '/locations' },
-        { name: 'Ẩm thực', path: '/food' },
-        { name: 'Lưu trú', path: '/stay' },
-        { name: 'Tin tức', path: '/news' },
-        { name: 'Tư vấn AI', path: '/chatbot' },
-    ];
+
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/50 backdrop-blur-xl border-b border-gray-100 shadow-sm">
@@ -56,13 +57,12 @@ const Navbar: React.FC = () => {
                                 <NavLink
                                     to="/admin"
                                     className={({ isActive }) =>
-                                        `px-4 py-2 rounded-xl text-sm font-bold transition-agll flex items-center ${isActive
+                                        `px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${isActive
                                             ? 'text-purple-700 bg-purple-50'
                                             : 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
                                         }`
                                     }
                                 >
-                                    {/* <LayoutDashboard className="w-4 h-4 mr-1" /> */}
                                     Admin
                                 </NavLink>
                             )}

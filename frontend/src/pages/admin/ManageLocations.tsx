@@ -198,7 +198,7 @@ const ManageLocations: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản lý địa điểm</h1>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản lý DU LỊCH</h1>
                         <p className="text-gray-500 mt-1 font-medium">
                             Cập nhật và quản lý các điểm đến trên bản đồ du lịch.{' '}
                             {categories.length > 0 && `Đang quản lý ${categories.length} danh mục.`}
@@ -208,7 +208,7 @@ const ManageLocations: React.FC = () => {
                         onClick={() => openModal()}
                         className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-blue-500/30 flex items-center hover:bg-blue-700 transition-all active:scale-95"
                     >
-                        <Plus className="w-5 h-5 mr-3" /> THÊM ĐỊA ĐIỂM
+                        <Plus className="w-5 h-5 mr-3" /> THÊM DU LỊCH
                     </button>
                 </div>
 

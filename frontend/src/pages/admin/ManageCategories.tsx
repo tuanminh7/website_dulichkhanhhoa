@@ -92,7 +92,7 @@ const ManageCategories: React.FC = () => {
                 <div className="flex justify-between items-center mb-10">
                     <div>
                         <h1 className="text-3xl font-black text-gray-900 tracking-tight">Quản lý danh mục</h1>
-                        <p className="text-gray-500 mt-1 font-medium">Quản lý các nhóm địa điểm (Tham quan, Ẩm thực, Lưu trú).</p>
+                        <p className="text-gray-500 mt-1 font-medium">Quản lý các nhóm DU LỊCH (Tham quan, Ẩm thực, Lưu trú).</p>
                     </div>
                     <button
                         onClick={() => openModal()}

@@ -20,7 +20,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20))
     avatar = db.Column(db.String(255))
-    role = db.Column(db.Enum('GUEST', 'USER', 'ADMIN', name='user_roles'), default='USER')
+    role = db.Column(db.Enum('GUEST', 'USER', 'BUSINESS', 'ADMIN', name='user_roles'), default='USER')
     is_active = db.Column(db.Boolean, default=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

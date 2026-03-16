@@ -24,3 +24,13 @@ def jwt_admin_required(fn):
             return jsonify({'error': 'Không có quyền truy cập'}), 403
         return fn(*args, **kwargs)
     return wrapper
+
+
+def jwt_business_required(fn):
+    @wraps(fn)
+    @jwt_login_required
+    def wrapper(*args, **kwargs):
+        if getattr(current_user, 'role', None) not in ('BUSINESS', 'ADMIN'):
+            return jsonify({'error': 'Chỉ doanh nghiệp đã được duyệt mới có quyền truy cập'}), 403
+        return fn(*args, **kwargs)
+    return wrapper

@@ -6,6 +6,8 @@ from app.models.post import Post, Comment, Like
 from app.models.analytics import SystemStatistic
 from app.models.dish import Dish, LocationDish
 from app.models.amenity import Amenity, LocationAmenity
+from app.models.business_registration import BusinessRegistration
+from app.models.booking import Booking
 
 __all__ = [
     'User', 'UserPreference',
@@ -15,5 +17,7 @@ __all__ = [
     'Post', 'Comment', 'Like',
     'SystemStatistic',
     'Dish', 'LocationDish',
-    'Amenity', 'LocationAmenity'
+    'Amenity', 'LocationAmenity',
+    'BusinessRegistration',
+    'Booking',
 ]
