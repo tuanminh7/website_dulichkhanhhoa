@@ -4,6 +4,34 @@ from datetime import datetime
 
 class NewsService:
     @staticmethod
+    def _normalize_image_url(value):
+        raw = (value or '').strip()
+        if not raw:
+            return None
+
+        if 'drive.google.com/file/d/' in raw:
+            try:
+                file_id = raw.split('/file/d/')[1].split('/')[0]
+                return f'https://drive.google.com/uc?export=view&id={file_id}'
+            except IndexError:
+                return raw
+
+        if 'drive.google.com/open?id=' in raw:
+            try:
+                file_id = raw.split('open?id=')[1].split('&')[0]
+                return f'https://drive.google.com/uc?export=view&id={file_id}'
+            except IndexError:
+                return raw
+
+        if raw.startswith('www.'):
+            return f'https://{raw}'
+
+        if raw.startswith('uploads/') or raw.startswith('static/'):
+            return f'/{raw}'
+
+        return raw
+
+    @staticmethod
     def get_posts(params):
         query = Post.query
         
@@ -34,9 +62,9 @@ class NewsService:
 
     @staticmethod
     def create_post(user_id, data):
-        title = data.get('title')
-        content = data.get('content')
-        image_url = data.get('image_url')
+        title = (data.get('title') or '').strip()
+        content = (data.get('content') or '').strip()
+        image_url = NewsService._normalize_image_url(data.get('image_url'))
 
         if not title or not content:
             return {'error': 'Tiêu đề và nội dung là bắt buộc'}, 400

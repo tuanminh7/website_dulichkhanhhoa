@@ -1,7 +1,5 @@
 import hashlib
 import json
-import os
-import pathlib
 
 from flask import Blueprint, Response, current_app, jsonify, request, send_file, stream_with_context
 from flask_jwt_extended import current_user, jwt_required
@@ -11,6 +9,7 @@ from app.models.ai import ChatSession
 from app.models.location import Location
 from app.services.ai_service import get_ai_service
 from app.services.itinerary_service import get_itinerary_service
+from app.utils.chatbot_images import resolve_chatbot_image
 
 bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -30,17 +29,12 @@ def _user_preference_context(user):
 @bp.route('/img/<slug>', methods=['GET'])
 def serve_image(slug):
     try:
-        backend_dir = pathlib.Path(current_app.root_path).parent
-        image_dir = backend_dir / 'static' / 'images' / 'anh'
-        if not image_dir.exists():
-            image_dir = pathlib.Path(current_app.root_path) / 'static' / 'images' / 'anh'
-
-        images = sorted([name for name in os.listdir(image_dir) if name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
-        idx = int(slug) - 1
-        if 0 <= idx < len(images):
-            return send_file(str(image_dir / images[idx]))
+        image = resolve_chatbot_image(slug)
+        if image:
+            return send_file(str(image['path']))
         return jsonify({'error': 'Image not found'}), 404
     except Exception as e:
+        current_app.logger.error(f'Error serving chatbot image {slug}: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
 
@@ -71,7 +65,7 @@ def chat():
         if count > 5:
             return jsonify({'error': 'Bạn đang chat quá nhanh. Vui lòng đợi 1 phút.'}), 429
 
-        cache_key = f'ai_cache:{hashlib.md5(message.lower().encode()).hexdigest()}'
+        cache_key = f'ai_cache:v2_image_attach:{hashlib.md5(message.lower().encode()).hexdigest()}'
         cached_response = cache.get(cache_key)
 
         from app.models.ai import ChatMessage, ChatSession
@@ -105,14 +99,29 @@ def chat():
 
             if cached_response:
                 yield f"data: {json.dumps({'text': cached_response})}\n\n"
-                full_response = cached_response
+                full_response = str(cached_response)
             else:
                 for chunk in ai_service.chat_stream(message, context=context, chat_history=chat_history):
                     full_response += chunk
                     yield f"data: {json.dumps({'text': chunk})}\n\n"
-                should_cache_response = full_response and not full_response.lstrip().startswith('Xin lỗi, đã có lỗi:')
-                if should_cache_response:
-                    cache.set(cache_key, full_response, ex=3600)
+
+            full_response_with_images = ai_service.append_relevant_images(
+                full_response,
+                f"{message}\n{full_response}",
+            )
+            if full_response_with_images != full_response:
+                appended_chunk = full_response_with_images[len(full_response):]
+                if appended_chunk:
+                    current_app.logger.info(
+                        'Appended chatbot images to response',
+                        extra={'session_id': chat_session.id, 'message': message[:80]}
+                    )
+                    yield f"data: {json.dumps({'text': appended_chunk})}\n\n"
+                full_response = full_response_with_images
+
+            should_cache_response = full_response and not full_response.lstrip().startswith('Xin lỗi, đã có lỗi:')
+            if should_cache_response:
+                cache.set(cache_key, full_response, ex=3600)
 
             try:
                 user_msg = ChatMessage(session_id=chat_session.id, sender_type='USER', message_content=message)
