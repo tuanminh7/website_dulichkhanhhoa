@@ -35,6 +35,7 @@ class Config:
 
     # Google Gemini API
     GEMINI_API_KEY = env_value('GEMINI_API_KEY')
+    GEMINI_API_KEYS = env_value('GEMINI_API_KEYS')
     GEMINI_MODEL = env_value('GEMINI_MODEL')
 
     # File Upload
