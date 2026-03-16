@@ -1,13 +1,11 @@
 import React from 'react';
 import Hero from '../../components/home/Hero';
 import { motion } from 'framer-motion';
-import { Landmark, Utensils, Hotel, ArrowRight, Bot, Calculator, ShieldCheck, Zap, Star } from 'lucide-react';
+import { Landmark, ArrowRight, Bot, Calculator, ShieldCheck, Zap, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
-    { id: 1, name: 'Điểm tham quan', icon: Landmark, color: 'bg-blue-500', path: '/locations?type=ATTRACTION', desc: 'Khám phá các di tích, hòn đảo và khu vui chơi.' },
-    { id: 2, name: 'Ẩm thực địa phương', icon: Utensils, color: 'bg-orange-500', path: '/food', desc: 'Thưởng thức nem nướng, hải sản và bún chả cá.' },
-    { id: 3, name: 'Lưu trú', icon: Hotel, color: 'bg-teal-500', path: '/stay', desc: 'Từ khách sạn sang trọng đến homestay ấm cúng.' },
+    { id: 1, name: 'DU LỊCH', icon: Landmark, color: 'bg-blue-500', path: '/locations?type=ATTRACTION', desc: 'Khám phá các di tích, hòn đảo và khu vui chơi.' },
 ];
 
 const features = [

@@ -308,4 +308,32 @@ export const adminService = {
     },
 };
 
+export const bookingService = {
+    // Customer endpoints
+    createBooking: (data: {
+        business_registration_id: string;
+        service_type: 'ROOM' | 'TABLE' | 'SEAT';
+        booking_date: string;
+        time_slot?: string;
+        guest_count?: number;
+        notes?: string;
+    }) => api.post('/bookings', data),
+
+    myBookings: () => api.get('/bookings/my'),
+
+    cancelBooking: (bookingId: string) => api.delete(`/bookings/${bookingId}`),
+
+    // Business owner endpoints
+    manageBookings: (status?: string) =>
+        api.get('/bookings/manage', { params: status ? { status } : {} }),
+
+    confirmBooking: (bookingId: string) =>
+        api.post(`/bookings/manage/${bookingId}/confirm`),
+
+    cancelBookingByBusiness: (bookingId: string) =>
+        api.post(`/bookings/manage/${bookingId}/cancel`),
+
+    myBusinesses: () => api.get('/bookings/manage/businesses'),
+};
+
 export default api;

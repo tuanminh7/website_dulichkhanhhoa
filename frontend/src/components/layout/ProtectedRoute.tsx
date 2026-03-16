@@ -5,10 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 interface ProtectedRouteProps {
     children: React.ReactNode;
     requireAdmin?: boolean;
+    requireBusiness?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
-    const { user, loading, isAdmin } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false, requireBusiness = false }) => {
+    const { user, loading, isAdmin, isBusiness } = useAuth();
     const location = useLocation();
 
     if (loading) {
@@ -27,6 +28,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     }
 
     if (requireAdmin && !isAdmin) {
+        return <Navigate to="/" replace />;
+    }
+
+    if (requireBusiness && !isBusiness && !isAdmin) {
         return <Navigate to="/" replace />;
     }
 

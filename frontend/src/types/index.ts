@@ -1,4 +1,4 @@
-export type UserRole = 'GUEST' | 'USER' | 'ADMIN';
+export type UserRole = 'GUEST' | 'USER' | 'BUSINESS' | 'ADMIN';
 
 export interface User {
     id: string;
@@ -167,3 +167,28 @@ export interface Like {
     created_at: string;
 }
 
+export interface Booking {
+    id: string;
+    business_registration_id: string;
+    customer_user_id: string;
+    service_type: 'ROOM' | 'TABLE' | 'SEAT';
+    booking_date: string;
+    time_slot: string;
+    guest_count: number;
+    notes?: string;
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+    created_at: string;
+    updated_at?: string;
+    business?: {
+        id: string;
+        business_name: string;
+        business_type: string;
+        headquarters_address: string;
+    };
+    customer?: {
+        id: string;
+        fullname: string;
+        email: string;
+        phone?: string;
+    };
+}

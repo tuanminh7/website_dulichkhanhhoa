@@ -68,7 +68,7 @@ const Locations: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-12">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Khám phá địa điểm</h1>
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Khám phá DU LỊCH</h1>
                     <p className="text-gray-600 text-lg">Tìm kiếm những điểm đến tuyệt vời nhất tại Khánh Hòa.</p>
                 </div>
 
