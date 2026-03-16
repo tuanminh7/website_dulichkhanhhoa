@@ -1,6 +1,6 @@
 import json
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, current_app, jsonify, send_from_directory
 from sqlalchemy import func
 
 from app import cache, db
@@ -51,6 +51,11 @@ def health_check():
         'service': 'Tourism API',
         'version': '1.0.0'
     })
+
+
+@bp.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
 @bp.route('/')

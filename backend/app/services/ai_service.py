@@ -1,7 +1,15 @@
 import google.generativeai as genai
 from flask import current_app
-import json, os, urllib.parse
+import json, os, re
+import threading
 from typing import List, Dict, Optional
+
+from app.utils.chatbot_images import (
+    find_explicit_chatbot_images,
+    find_relevant_chatbot_images,
+    get_chatbot_image_dir,
+    normalize_chatbot_text,
+)
 
 
 class GeminiAIService:
@@ -9,6 +17,12 @@ class GeminiAIService:
     def __init__(self):
         self.model = None
         self.knowledge_base = ""
+        self.knowledge_sections = []
+        self.api_keys: List[str] = []
+        self._rotation_lock = threading.Lock()
+        self._genai_lock = threading.RLock()
+        self._next_api_key_index = 0
+        self._load_knowledge_base()
         self._configure()
         self._load_knowledge_base()
     
@@ -32,17 +46,246 @@ class GeminiAIService:
                     current_app.logger.error(f"Error reading {data_path}: {str(e)}")
         current_app.logger.warning("data_chat.txt not found!")
     
+    def _normalize_text(self, text: str) -> str:
+        return normalize_chatbot_text(text)
+
+    def _extract_keywords(self, text: str) -> List[str]:
+        normalized = self._normalize_text(text)
+        stopwords = {
+            'toi', 'tu', 'van', 'cho', 'xin', 'hay', 'o', 'di', 'nhe', 'la', 'va', 'nhung', 'cac',
+            'nhung', 'mot', 'ngay', 'dem', 'giup', 'minh', 'du', 'lich', 'dia', 'diem', 'tu', 'toi',
+            'co', 'the', 'nao', 'khong', 'duoc', 'voi', 've', 'tai', 'den', 'tham', 'quan', 'goi', 'y',
+            'nhat', 'nhieu', 'it', 'gan', 'xa', 'an', 'uong', 'luu', 'tru', 'chi', 'phi'
+        }
+        tokens = [token for token in normalized.split() if len(token) > 2 and token not in stopwords]
+        ordered = []
+        seen = set()
+        for token in tokens:
+            if token not in seen:
+                seen.add(token)
+                ordered.append(token)
+        return ordered[:8]
+
+    def _get_relevant_knowledge(self, message: str, max_sections: int = 4, max_chars: int = 4500) -> str:
+        if not getattr(self, 'knowledge_sections', None):
+            return self.knowledge_base[:max_chars]
+
+        keywords = self._extract_keywords(message)
+        if not keywords:
+            return '\n\n'.join(self.knowledge_sections[:max_sections])[:max_chars]
+
+        scored_sections = []
+        for index, section in enumerate(self.knowledge_sections):
+            normalized_section = self._normalize_text(section)
+            score = sum(normalized_section.count(keyword) for keyword in keywords)
+            if score > 0:
+                scored_sections.append((score, index, section))
+
+        if not scored_sections:
+            return '\n\n'.join(self.knowledge_sections[:max_sections])[:max_chars]
+
+        scored_sections.sort(key=lambda item: (-item[0], item[1]))
+        selected = []
+        current_length = 0
+        for _, _, section in scored_sections[: max_sections * 2]:
+            clean_section = section.strip()
+            if not clean_section:
+                continue
+            projected = current_length + len(clean_section) + 2
+            if selected and projected > max_chars:
+                break
+            selected.append(clean_section)
+            current_length = projected
+            if len(selected) >= max_sections:
+                break
+
+        return '\n\n'.join(selected)[:max_chars]
+
+    def _get_relevant_image_markdown(self, message: str, max_images: int = 2) -> str:
+        try:
+            image_dir = get_chatbot_image_dir()
+            if image_dir is None:
+                return ''
+
+            keywords = self._extract_keywords(message)
+            selected = find_relevant_chatbot_images(message, keywords=keywords, max_images=max_images)
+            if not selected:
+                return ''
+
+            lines = []
+            for image in selected:
+                display_name = str(image['display_name'])
+                slug = str(image['slug'])
+                lines.append(f"- slug={slug}: `![{display_name}](/api/ai/img/{slug})` — {display_name}")
+            return '\n'.join(lines)
+        except Exception as e:
+            current_app.logger.error(f"Error listing filtered images: {str(e)}")
+            return ''
+
+    def _build_image_gallery_markdown(self, source_text: str, max_images: int = 2) -> str:
+        try:
+            if not source_text or '![' in source_text:
+                return ''
+
+            selected = self._select_response_images(source_text, max_images=max_images)
+            if not selected:
+                return ''
+
+            lines = []
+            for image in selected:
+                display_name = str(image['display_name'])
+                slug = str(image['slug'])
+                lines.append(f"![{display_name}](/api/ai/img/{slug})")
+            return '\n\nẢnh minh họa:\n\n' + '\n\n'.join(lines)
+        except Exception as e:
+            current_app.logger.error(f"Error building image gallery: {str(e)}")
+            return ''
+
+    def _select_response_images(self, source_text: str, max_images: int = 2) -> List[Dict[str, object]]:
+        selected = []
+        seen_slugs = set()
+
+        def extend(images: List[Dict[str, object]]):
+            for image in images:
+                slug = str(image['slug'])
+                if slug in seen_slugs:
+                    continue
+                selected.append(image)
+                seen_slugs.add(slug)
+                if len(selected) >= max_images:
+                    return True
+            return False
+
+        if extend(find_explicit_chatbot_images(source_text, max_images=max_images)):
+            return selected
+        extend(find_relevant_chatbot_images(source_text, max_images=max_images))
+        return selected
+
+    def append_relevant_images(self, response_text: str, source_text: str, max_images: int = 2) -> str:
+        if not response_text:
+            return response_text
+        image_gallery = self._build_image_gallery_markdown(source_text, max_images=max_images)
+        if not image_gallery:
+            return response_text
+        return response_text + image_gallery
+
+    def _parse_api_keys(self) -> List[str]:
+        raw_values = []
+        keys_value = current_app.config.get('GEMINI_API_KEYS')
+        single_value = current_app.config.get('GEMINI_API_KEY')
+        if keys_value:
+            raw_values.append(keys_value)
+        if single_value:
+            raw_values.append(single_value)
+
+        parsed = []
+        seen = set()
+        for raw_value in raw_values:
+            for item in re.split(r'[\r\n,;]+', str(raw_value)):
+                key = item.strip()
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+                parsed.append(key)
+        return parsed
+
+    def _mask_api_key(self, api_key: str) -> str:
+        if len(api_key) <= 8:
+            return '*' * len(api_key)
+        return f"{api_key[:4]}...{api_key[-4:]}"
+
+    def _reserve_api_key_order(self) -> List[str]:
+        if not self.api_keys:
+            return []
+        with self._rotation_lock:
+            start = self._next_api_key_index % len(self.api_keys)
+            self._next_api_key_index = (start + 1) % len(self.api_keys)
+            return self.api_keys[start:] + self.api_keys[:start]
+
+    def _api_key_label(self, api_key: str) -> str:
+        try:
+            index = self.api_keys.index(api_key) + 1
+        except ValueError:
+            index = -1
+        if index > 0:
+            return f'key#{index}/{len(self.api_keys)} ({self._mask_api_key(api_key)})'
+        return self._mask_api_key(api_key)
+
+    def _should_try_next_api_key(self, error: Exception) -> bool:
+        message = str(error).lower()
+        retryable_markers = (
+            'quota',
+            'rate limit',
+            'resource_exhausted',
+            '429',
+            '503',
+            '500',
+            'deadline exceeded',
+            'timed out',
+            'timeout',
+            'temporarily unavailable',
+            'service unavailable',
+            'internal error',
+            'api key',
+            'permission denied',
+            'unauthenticated',
+            'invalid argument: api key',
+            'invalid api key',
+            'authentication',
+            'connection reset',
+            'connection aborted',
+            'unavailable',
+        )
+        return any(marker in message for marker in retryable_markers)
+
+    def _build_model(
+        self,
+        generation_config: Optional[Dict] = None,
+        system_instruction: Optional[str] = None,
+    ):
+        return genai.GenerativeModel(
+            model_name=self.model_name,
+            generation_config=generation_config or self.generation_config,
+            safety_settings=self.safety_settings,
+            system_instruction=system_instruction,
+        )
+
+    def _run_with_api_keys(self, action_name: str, operation):
+        ordered_keys = self._reserve_api_key_order()
+        last_error = None
+
+        for api_key in ordered_keys:
+            key_label = self._api_key_label(api_key)
+            try:
+                with self._genai_lock:
+                    genai.configure(api_key=api_key)
+                    result = operation(api_key)
+                current_app.logger.info(
+                    f"Gemini {action_name} succeeded with {key_label}"
+                )
+                return result
+            except Exception as e:
+                last_error = e
+                should_try_next = self._should_try_next_api_key(e)
+                current_app.logger.warning(
+                    f"Gemini {action_name} failed with {key_label}: {str(e)}"
+                )
+                if not should_try_next:
+                    raise e
+
+        if last_error:
+            raise last_error
+        raise ValueError("No Gemini API key available")
+
     def _configure(self):
         """Configure Gemini API"""
         try:
-            api_key = current_app.config.get('GEMINI_API_KEY')
-            if not api_key:
-                raise ValueError("GEMINI_API_KEY not configured")
-            
-            genai.configure(api_key=api_key)
+            self.api_keys = self._parse_api_keys()
+            if not self.api_keys:
+                raise ValueError("GEMINI_API_KEY or GEMINI_API_KEYS not configured")
 
-            # Dùng gemini-2.5-flash, fallback về gemini-1.5-flash nếu không có
-            self.model_name = current_app.config.get('GEMINI_MODEL', 'gemini-2.5-flash-preview-04-17')
+            configured_model = current_app.config.get('GEMINI_MODEL') or 'models/gemini-2.5-flash'
+            self.model_name = configured_model if configured_model.startswith('models/') else f'models/{configured_model}'
             
             generation_config = {
                 "temperature": current_app.config.get('AI_TEMPERATURE', 0.8),
@@ -61,12 +304,10 @@ class GeminiAIService:
             self.generation_config = generation_config
             self.safety_settings = safety_settings
             
-            self.model = genai.GenerativeModel(
-                model_name=self.model_name,
-                generation_config=generation_config,
-                system_instruction=self._get_system_instruction(),
-                safety_settings=safety_settings
-            )
+            with self._genai_lock:
+                genai.configure(api_key=self.api_keys[0])
+                self.model = self._build_model()
+
             
         except Exception as e:
             current_app.logger.error(f"Error configuring Gemini: {str(e)}")
@@ -101,29 +342,31 @@ class GeminiAIService:
     def _do_chat(self, message: str, context: Optional[Dict] = None,
                  chat_history: Optional[List[Dict]] = None, stream: bool = False):
         """Core chat logic using proper system_instruction and multi-turn history."""
-        system_instruction = self._get_system_instruction(context)
-        
-        model_with_system = genai.GenerativeModel(
-            model_name=self.model_name,
-            generation_config=self.generation_config,
-            safety_settings=self.safety_settings,
-            system_instruction=system_instruction
-        )
-        
-        # Build Gemini chat history
+        system_instruction = self._get_system_instruction(message, context)
+
+        chat_generation_config = dict(self.generation_config)
+        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 1200)
+
+        # Build proper Gemini chat history format
         gemini_history = []
         if chat_history:
             for msg in chat_history[-10:]:
                 role = 'user' if msg.get('role') == 'user' else 'model'
                 gemini_history.append({'role': role, 'parts': [msg.get('content', '')]})
-        
-        chat = model_with_system.start_chat(history=gemini_history)
-        
+
         if stream:
-            return chat.send_message(message, stream=True), chat
-        else:
+            raise NotImplementedError("_do_chat(stream=True) is not used; call chat_stream instead.")
+
+        def operation(_api_key):
+            model_with_system = self._build_model(
+                generation_config=chat_generation_config,
+                system_instruction=system_instruction,
+            )
+            chat = model_with_system.start_chat(history=gemini_history)
             response = chat.send_message(message)
             return response.text, chat
+
+        return self._run_with_api_keys('chat', operation)
 
     def _build_chat_prompt(self, message: str, context: Optional[Dict] = None, 
                           chat_history: Optional[List[Dict]] = None) -> str:
@@ -132,14 +375,75 @@ class GeminiAIService:
 
     def chat_stream(self, message: str, context: Dict = None, chat_history: List[Dict] = None):
         """Chat với AI mode streaming"""
+        system_instruction = self._get_system_instruction(message, context)
+        chat_generation_config = dict(self.generation_config)
+        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 1200)
+
+        gemini_history = []
+        if chat_history:
+            for msg in chat_history[-10:]:
+                role = 'user' if msg.get('role') == 'user' else 'model'
+                gemini_history.append({'role': role, 'parts': [msg.get('content', '')]})
+
+        ordered_keys = self._reserve_api_key_order()
+        last_error = None
+
+        for api_key in ordered_keys:
+            key_label = self._api_key_label(api_key)
+            emitted_length = 0
+            collected_chunks = []
+            truncated = False
+            yielded_any = False
+            try:
+                with self._genai_lock:
+                    genai.configure(api_key=api_key)
+                    model_with_system = self._build_model(
+                        generation_config=chat_generation_config,
+                        system_instruction=system_instruction,
+                    )
+                    chat = model_with_system.start_chat(history=gemini_history)
+                    response_stream = chat.send_message(message, stream=True)
+
+                    for chunk in response_stream:
+                        try:
+                            if not chunk.text:
+                                continue
+                            yielded_any = True
+                            collected_chunks.append(chunk.text)
+                            emitted_length += len(chunk.text)
+                            yield chunk.text
+                            if emitted_length >= 3500:
+                                truncated = True
+                                yield "\n\nBạn muốn mình tiếp tục gợi ý thêm không? Mình có thể chia nhỏ theo từng nhóm địa điểm."
+                                break
+                        except Exception:
+                            pass
+
+                if not truncated:
+                    full_text = ''.join(collected_chunks)
+                    image_gallery = self._build_image_gallery_markdown(f"{message}\n{full_text}")
+                    if image_gallery:
+                        yield image_gallery
+                current_app.logger.info(
+                    f"Gemini chat_stream succeeded with {key_label}"
+                )
+                return
+            except Exception as e:
+                last_error = e
+                should_try_next = self._should_try_next_api_key(e)
+                current_app.logger.warning(
+                    f"Gemini chat_stream failed with {key_label}: {str(e)}"
+                )
+                if yielded_any:
+                    yield "\n\nXin lỗi, kết nối tới AI bị gián đoạn. Bạn hãy gửi lại câu hỏi giúp mình nhé."
+                    return
+                if not should_try_next:
+                    break
+
         try:
-            response_stream, _ = self._do_chat(message, context, chat_history, stream=True)
-            for chunk in response_stream:
-                try:
-                    if chunk.text:
-                        yield chunk.text
-                except Exception:
-                    pass
+            if last_error:
+                raise last_error
+            raise ValueError("No Gemini API key available")
         except Exception as e:
             current_app.logger.error(f"Gemini chat stream error: {str(e)}")
             yield f"Xin lỗi, đã có lỗi: {str(e)}"
@@ -148,7 +452,11 @@ class GeminiAIService:
         """Generate travel itinerary based on preferences"""
         try:
             prompt = self._build_itinerary_prompt(preferences)
-            response = self.model.generate_content(prompt)
+
+            response = self._run_with_api_keys(
+                'generate_itinerary',
+                lambda _api_key: self._build_model().generate_content(prompt)
+            )
             
             try:
                 itinerary_data = self._parse_json_response(response.text)
@@ -175,7 +483,11 @@ class GeminiAIService:
     def suggest_places(self, criteria: dict, available_places: list[dict]) -> dict:
         try:
             prompt = self._build_suggestion_prompt(criteria, available_places)
-            response = self.model.generate_content(prompt)
+
+            response = self._run_with_api_keys(
+                'suggest_places',
+                lambda _api_key: self._build_model().generate_content(prompt)
+            )
             
             try:
                 suggestions = self._parse_json_response(response.text)
@@ -201,7 +513,11 @@ class GeminiAIService:
     def estimate_cost(self, itinerary_data: dict) -> dict:
         try:
             prompt = self._build_cost_estimation_prompt(itinerary_data)
-            response = self.model.generate_content(prompt)
+
+            response = self._run_with_api_keys(
+                'estimate_cost',
+                lambda _api_key: self._build_model().generate_content(prompt)
+            )
             
             try:
                 cost_data = self._parse_json_response(response.text)
@@ -225,40 +541,7 @@ class GeminiAIService:
                 'error': str(e)
             }
     
-    def _build_image_index(self):
-        """Build a mapping from short slug IDs to actual image files."""
-        try:
-            backend_dir = os.path.dirname(current_app.root_path)
-            image_dir = os.path.join(backend_dir, 'static', 'uploads', 'images', 'anh')
-            if not os.path.exists(image_dir):
-                image_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'images', 'anh')
-            if not os.path.exists(image_dir):
-                return {}, {}
-            images = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
-            return (
-                {str(i+1): os.path.join(image_dir, img) for i, img in enumerate(images)},
-                {str(i+1): img for i, img in enumerate(images)}
-            )
-        except Exception as e:
-            current_app.logger.error(f"Error building image index: {str(e)}")
-            return {}, {}
-
-    def _build_image_map(self) -> dict:
-        """Build map: filename (no ext, lowercase) -> image URL slug ID"""
-        try:
-            backend_dir = os.path.dirname(current_app.root_path)
-            image_dir = os.path.join(backend_dir, 'static', 'uploads', 'images', 'anh')
-            if not os.path.exists(image_dir):
-                image_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'images', 'anh')
-            if not os.path.exists(image_dir):
-                return {}
-            images = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))])
-            return {os.path.splitext(img)[0]: str(i + 1) for i, img in enumerate(images)}
-        except Exception as e:
-            current_app.logger.error(f"Error building image map: {str(e)}")
-            return {}
-
-    def _build_tourism_system_prompt(self) -> str:
+    def _build_tourism_system_prompt(self, message: str = '') -> str:
         """Build system prompt for tourism assistant"""
         # Danh sách ảnh cứng theo tên file thực tế (sorted alphabetically = ID thứ tự)
         KNOWN_IMAGES = [
@@ -309,9 +592,13 @@ class GeminiAIService:
             "bãi biển dốc lết nha trang",
         ]
 
-        image_list_str = ""
-        for i, name in enumerate(KNOWN_IMAGES):
-            image_list_str += f"- {name}: ![{name}](/api/ai/img/{i+1})\n"
+        image_rules = "- Không chèn hình ảnh nếu không thực sự cần.\n- Tối đa 2 hình trong một câu trả lời.\n"
+        if image_list_str:
+            image_rules += "- Khi người dùng hỏi về một địa điểm cụ thể và có ảnh khớp, hãy luôn chèn ít nhất 1 ảnh minh họa đúng địa điểm đó ở cuối câu trả lời.\n"
+            image_rules += "- Nếu bạn gợi ý nhiều địa điểm, ưu tiên ảnh của địa điểm quan trọng nhất hoặc địa điểm người dùng hỏi trực tiếp.\n"
+            image_rules += "- Nếu dùng ảnh, chỉ được dùng CHÍNH XÁC các mã Markdown sau:\n" + image_list_str
+        else:
+            image_rules += "- Hiện tại không có ảnh phù hợp rõ ràng với câu hỏi, nên ưu tiên trả lời bằng chữ.\n"
 
         return f"""Bạn là trợ lý du lịch thông minh tên là "Khánh Hòa Travel AI", chuyên tư vấn du lịch tại tỉnh Khánh Hòa và Ninh Thuận, Việt Nam.
 
@@ -564,5 +851,5 @@ def get_ai_service() -> GeminiAIService:
     return _ai_service
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     get_ai_service()

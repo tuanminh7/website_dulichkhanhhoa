@@ -9,27 +9,32 @@ MAX_IMAGES = 5
 
 class NewsService:
     @staticmethod
-    def allowed_file(filename):
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in current_app.config.get(
-            'ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+    def _normalize_image_url(value):
+        raw = (value or '').strip()
+        if not raw:
+            return None
 
-    @staticmethod
-    def save_image(file):
-        """Save an uploaded image file and return its URL path."""
-        if not file or not getattr(file, 'filename', ''):
-            return None
-        if not NewsService.allowed_file(file.filename):
-            return None
-        filename = secure_filename(file.filename)
-        # Deduplicate filename
-        base, ext = os.path.splitext(filename)
-        unique_name = f"{base}_{os.urandom(4).hex()}{ext}"
-        upload_folder = current_app.config.get(
-            'UPLOAD_FOLDER', os.path.join('app', 'static', 'uploads'))
-        os.makedirs(upload_folder, exist_ok=True)
-        upload_path = os.path.join(upload_folder, unique_name)
-        file.save(upload_path)
-        return f'/uploads/{unique_name}'
+        if 'drive.google.com/file/d/' in raw:
+            try:
+                file_id = raw.split('/file/d/')[1].split('/')[0]
+                return f'https://drive.google.com/uc?export=view&id={file_id}'
+            except IndexError:
+                return raw
+
+        if 'drive.google.com/open?id=' in raw:
+            try:
+                file_id = raw.split('open?id=')[1].split('&')[0]
+                return f'https://drive.google.com/uc?export=view&id={file_id}'
+            except IndexError:
+                return raw
+
+        if raw.startswith('www.'):
+            return f'https://{raw}'
+
+        if raw.startswith('uploads/') or raw.startswith('static/'):
+            return f'/{raw}'
+
+        return raw
 
     @staticmethod
     def get_posts(params):
@@ -89,9 +94,10 @@ class NewsService:
         return post_data, 200
 
     @staticmethod
-    def create_post(user_id, data, files):
-        title = data.get('title')
-        content = data.get('content')
+    def create_post(user_id, data):
+        title = (data.get('title') or '').strip()
+        content = (data.get('content') or '').strip()
+        image_url = NewsService._normalize_image_url(data.get('image_url'))
 
         if not title or not content:
             return {'error': 'Tiêu đề và nội dung là bắt buộc'}, 400
