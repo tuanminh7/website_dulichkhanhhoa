@@ -9,10 +9,10 @@ const Navbar: React.FC = () => {
     const { user, logout, isAdmin, isBusiness, loading } = useAuth();
 
     const navLinks = [
-        { name: 'DU LỊCH', path: '/locations' },
-        { name: 'Tin tức', path: '/news' },
-        { name: 'Tư vấn AI', path: '/chatbot' },
-        ...(isBusiness ? [{ name: 'Quản lý', path: '/business' }] : [{ name: 'Hợp tác', path: '/register-business' }]),
+        { name: 'Du Lịch', path: '/locations' },
+        { name: 'Tin Tức', path: '/news' },
+        { name: 'Tư Vấn AI', path: '/chatbot' },
+        ...(isBusiness ? [{ name: 'Quản Lý', path: '/business' }] : [{ name: 'Hợp Tác', path: '/register-business' }]),
     ];
 
     const handleLogout = () => {

@@ -49,12 +49,6 @@ def toggle_comment_like(post_id, comment_id):
     result, status_code = NewsService.toggle_comment_like(comment_id, get_jwt_identity())
     return jsonify(result), status_code
 
-@bp.route('/<string:post_id>/comment/<string:comment_id>/like', methods=['POST'])
-@jwt_required()
-def toggle_comment_like(post_id, comment_id):
-    """Thích/Bỏ thích bình luận"""
-    result, status_code = NewsService.toggle_comment_like(comment_id, get_jwt_identity())
-    return jsonify(result), status_code
 
 @bp.route('/<string:post_id>/like', methods=['POST'])
 @jwt_required()

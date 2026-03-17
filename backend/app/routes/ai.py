@@ -70,12 +70,7 @@ def chat():
         if count > 5:
             return jsonify({'error': 'Bạn đang chat quá nhanh. Vui lòng đợi 1 phút.'}), 429
 
-<<<<<<< HEAD
-        # 2. Response Caching
-        cache_key = f"ai_cache:{hashlib.md5(message.lower().encode()).hexdigest()}"
-=======
         cache_key = f'ai_cache:v2_image_attach:{hashlib.md5(message.lower().encode()).hexdigest()}'
->>>>>>> 7e603f8 ( update chatbot V5)
         cached_response = cache.get(cache_key)
         
         from app.models.ai import ChatSession, ChatMessage
