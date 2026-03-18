@@ -241,6 +241,11 @@ export const chatService = {
     getSessionMessages: (sessionId: number) => getCached<ChatMessage[]>(`/ai/sessions/${sessionId}/messages`),
     sendMessage: (sessionId: number, message: string) => api.post<{ response: string, session_id: number, ai_message: ChatMessage }>('/ai/chat', { session_id: sessionId, message }),
     createSession: (title: string) => api.post<ChatSession>('/ai/sessions', { title }),
+    deleteSession: async (sessionId: number) => {
+        const response = await api.delete(`/ai/chat-sessions/${sessionId}`);
+        invalidateCache('GET:/ai/sessions');
+        return response;
+    },
 };
 
 export const interactionService = {
@@ -317,6 +322,8 @@ export const bookingService = {
         time_slot?: string;
         guest_count?: number;
         notes?: string;
+        customer_name: string;
+        customer_phone: string;
     }) => api.post('/bookings', data),
 
     myBookings: () => api.get('/bookings/my'),
@@ -334,6 +341,13 @@ export const bookingService = {
         api.post(`/bookings/manage/${bookingId}/cancel`),
 
     myBusinesses: () => api.get('/bookings/manage/businesses'),
+    deleteJunkBookings: () => api.delete('/bookings/manage/junk'),
+};
+
+export const businessService = {
+    // Public endpoints
+    getApprovedBusinesses: () => api.get('/business'),
+    getBusinessDetail: (id: string) => api.get(`/business/${id}`),
 };
 
 export default api;

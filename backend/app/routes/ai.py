@@ -6,6 +6,8 @@ from flask_jwt_extended import jwt_required, current_user
 from app.services.ai_service import get_ai_service
 from app.services.itinerary_service import get_itinerary_service
 from app.utils.chatbot_images import resolve_chatbot_image
+from app.utils.db_knowledge import get_db_knowledge_stats
+from app import db, cache
 
 bp = Blueprint('ai', __name__, url_prefix='/api/ai')
 
@@ -224,6 +226,7 @@ def suggest_places():
             'duration': data.get('duration')
         }
         
+        from app.models.location import Location
         # Get available places
         query = Location.query.filter(Location.status == 'ACTIVE')
         
@@ -298,6 +301,7 @@ def create_session():
 def get_chat_sessions():
     """Lấy danh sách chat sessions"""
     try:
+        from app.models.ai import ChatSession
         if current_user:
             sessions = ChatSession.query.filter_by(
                 user_id=current_user.id
@@ -325,9 +329,6 @@ def get_chat_session_messages(session_id):
             if not current_user or not hasattr(current_user, 'id') or current_user.id != chat_session.user_id:
                 return jsonify({'error': 'Không có quyền truy cập'}), 403
         else:
-            # Guest session: If a user is logged in, they shouldn't really be looking at guest sessions
-            # But more importantly, we should prevent logged-in users from "snooping" guest sessions if they aren't meant to.
-            # However, for now, we allow access to guest sessions if they aren't claimed.
             pass
                 
         messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at.asc()).all()
@@ -341,7 +342,11 @@ def get_chat_session_messages(session_id):
 def get_chat_session(session_id):
     """Lấy chi tiết chat session"""
     try:
-        chat_session = ChatSession.query.filter_by(session_id=session_id).first_or_404()
+        from app.models.ai import ChatSession
+        chat_session = ChatSession.query.filter_by(id=session_id).first()
+        
+        if not chat_session:
+            return jsonify({'error': 'Không tìm thấy đoạn chat'}), 404
         
         # Check permission
         if chat_session.user_id and (not current_user or 
@@ -362,10 +367,14 @@ def delete_chat_session(session_id):
         return jsonify({'error': 'Vui lòng đăng nhập'}), 401
     
     try:
+        from app.models.ai import ChatSession
         chat_session = ChatSession.query.filter_by(
-            session_id=session_id,
+            id=session_id,
             user_id=current_user.id
-        ).first_or_404()
+        ).first()
+        
+        if not chat_session:
+            return jsonify({'error': 'Không tìm thấy đoạn chat hoặc bạn không có quyền xóa'}), 404
         
         db.session.delete(chat_session)
         db.session.commit()
@@ -374,4 +383,44 @@ def delete_chat_session(session_id):
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/admin/refresh-knowledge', methods=['POST'])
+@jwt_required()
+def refresh_ai_knowledge():
+    """Admin: reload AI chatbot knowledge from database without restarting."""
+    if not current_user or getattr(current_user, 'role', None) != 'ADMIN':
+        return jsonify({'error': 'Chỉ admin mới có quyền thực hiện thao tác này'}), 403
+    try:
+        ai_service = get_ai_service()
+        result = ai_service.refresh_knowledge()
+        if result.get('success'):
+            stats = result.get('stats', {})
+            return jsonify({
+                'message': 'Đã reload kiến thức AI từ database thành công',
+                'stats': stats,
+            }), 200
+        return jsonify({'error': result.get('error', 'Unknown error')}), 500
+    except Exception as e:
+        current_app.logger.error(f'refresh_ai_knowledge error: {e}')
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/admin/knowledge-stats', methods=['GET'])
+@jwt_required()
+def get_knowledge_stats():
+    """Admin: get current DB knowledge statistics."""
+    if not current_user or getattr(current_user, 'role', None) != 'ADMIN':
+        return jsonify({'error': 'Chỉ admin mới có quyền xem thông tin này'}), 403
+    try:
+        ai_service = get_ai_service()
+        db_stats = get_db_knowledge_stats()
+        return jsonify({
+            'knowledge_base_chars': len(ai_service.knowledge_base),
+            'knowledge_sections': len(ai_service.knowledge_sections),
+            'db_images_loaded': len(ai_service._db_image_list),
+            'db_stats': db_stats,
+        }), 200
+    except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -26,9 +26,11 @@ def create_booking():
     time_slot = data.get('time_slot', '')
     guest_count = int(data.get('guest_count', 1))
     notes = data.get('notes', '')
+    customer_name = data.get('customer_name', '').strip()
+    customer_phone = data.get('customer_phone', '').strip()
 
-    if not business_registration_id or not booking_date_str:
-        return jsonify({'error': 'Vui lòng cung cấp đầy đủ thông tin đặt chỗ'}), 400
+    if not business_registration_id or not booking_date_str or not customer_name or not customer_phone:
+        return jsonify({'error': 'Vui lòng cung cấp đầy đủ thông tin đặt chỗ và người liên hệ'}), 400
 
     if service_type not in ('ROOM', 'TABLE', 'SEAT'):
         return jsonify({'error': 'Loại dịch vụ không hợp lệ'}), 400
@@ -47,6 +49,8 @@ def create_booking():
         booking = Booking(
             business_registration_id=business_registration_id,
             customer_user_id=customer_user_id,
+            customer_name=customer_name,
+            customer_phone=customer_phone,
             service_type=service_type,
             booking_date=booking_date,
             time_slot=time_slot,
@@ -181,3 +185,34 @@ def my_businesses():
         user_id=owner_id, status='APPROVED'
     ).all()
     return jsonify([r.to_dict() for r in registrations]), 200
+@bp.route('/manage/junk', methods=['DELETE'])
+@jwt_business_required
+def clear_junk_bookings():
+    """Permanently delete CANCELLED bookings for the owner's businesses."""
+    from flask_jwt_extended import get_jwt_identity
+    owner_id = get_jwt_identity()
+
+    # Find all approved registrations owned by this user
+    registrations = BusinessRegistration.query.filter_by(
+        user_id=owner_id, status='APPROVED'
+    ).all()
+    reg_ids = [r.id for r in registrations]
+
+    if not reg_ids:
+        return jsonify({'message': 'Không tìm thấy doanh nghiệp nào', 'deleted_count': 0}), 200
+
+    try:
+        # Delete CANCELLED bookings for these businesses
+        deleted_count = Booking.query.filter(
+            Booking.business_registration_id.in_(reg_ids),
+            Booking.status == 'CANCELLED'
+        ).delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({
+            'message': f'Đã xóa sạch {deleted_count} yêu cầu đặt chỗ rác',
+            'deleted_count': deleted_count
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

@@ -101,6 +101,22 @@ const BusinessDashboard: React.FC = () => {
     }
   };
 
+  const handleClearJunk = async () => {
+    try {
+      const res = await bookingService.deleteJunkBookings();
+      // Ensure res.data exists and has deleted_count
+      const count = res.data?.deleted_count ?? 0;
+      if (count > 0) {
+        toast.success(`Đã dọn dẹp ${count} dữ liệu rác thành công!`);
+        fetchBookings();
+      } else {
+        toast.success('Không có dữ liệu rác nào để dọn dẹp.');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Lỗi khi dọn dẹp dữ liệu');
+    }
+  };
+
   const filters: { label: string; value: StatusFilter }[] = [
     { label: 'Tất cả', value: 'ALL' },
     { label: 'Chờ duyệt', value: 'PENDING' },
@@ -109,7 +125,7 @@ const BusinessDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-16 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 px-4">
+    <div className="min-h-screen pt-24 pb-16 bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <motion.div
@@ -126,6 +142,20 @@ const BusinessDashboard: React.FC = () => {
               <p className="text-gray-500 font-medium">Xem và xử lý các yêu cầu đặt chỗ từ khách hàng</p>
             </div>
           </div>
+
+          <div className="flex justify-end -mt-12">
+            <button
+              onClick={() => {
+                if (window.confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tất cả các yêu cầu đặt chỗ đã bị hủy? Hành động này không thể hoàn tác.')) {
+                  handleClearJunk();
+                }
+              }}
+              className="group flex items-center gap-2 px-4 py-2 bg-white text-gray-600 font-bold rounded-xl border border-gray-200 hover:border-red-200 hover:text-red-600 transition-all shadow-sm hover:shadow-md active:scale-95"
+            >
+              <XCircle className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+              <span>Dọn dẹp rác</span>
+            </button>
+          </div>
         </motion.div>
 
         {/* Filter Tabs */}
@@ -139,11 +169,10 @@ const BusinessDashboard: React.FC = () => {
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
-                filter === f.value
+              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${filter === f.value
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
                   : 'text-gray-500 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {f.label}
             </button>
@@ -184,7 +213,7 @@ const BusinessDashboard: React.FC = () => {
                   <div className="grow space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="font-bold text-gray-900 text-lg">
-                        {booking.customer?.fullname || 'Khách'}
+                        {booking.customer_name || booking.customer?.fullname || 'Khách'}
                       </span>
                       <StatusBadge status={booking.status} />
                       <span className="text-xs text-gray-400 font-medium">
@@ -208,9 +237,10 @@ const BusinessDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    {booking.customer?.phone && (
+                    {(booking.customer_phone || booking.customer?.phone) && (
                       <p className="text-xs text-gray-400">
-                        📞 {booking.customer.phone} · {booking.customer.email}
+                        📞 {booking.customer_phone || booking.customer?.phone}
+                        {booking.customer?.email ? ` · ${booking.customer.email}` : ''}
                       </p>
                     )}
                   </div>

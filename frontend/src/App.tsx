@@ -9,6 +9,8 @@ import { Toaster } from 'react-hot-toast';
 const Home = lazy(() => import('./pages/guest/Home'));
 const Locations = lazy(() => import('./pages/guest/Locations'));
 const LocationDetail = lazy(() => import('./pages/guest/LocationDetail'));
+const Businesses = lazy(() => import('./pages/guest/Businesses'));
+const BusinessDetail = lazy(() => import('./pages/guest/BusinessDetail'));
 const Chatbot = lazy(() => import('./pages/guest/Chatbot'));
 const CostEstimation = lazy(() => import('./pages/guest/CostEstimation'));
 const Login = lazy(() => import('./pages/guest/Login'));
@@ -58,6 +60,8 @@ function App() {
             <Route path="itineraries" element={<ProtectedRoute><Itineraries /></ProtectedRoute>} />
             <Route path="locations" element={<Locations />} />
             <Route path="locations/:id" element={<LocationDetail />} />
+            <Route path="businesses" element={<Businesses />} />
+            <Route path="businesses/:id" element={<BusinessDetail />} />
             <Route path="chatbot" element={<Chatbot />} />
             <Route path="news" element={<NewsList />} />
             <Route path="news/:id" element={<NewsDetail />} />

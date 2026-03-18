@@ -171,6 +171,8 @@ export interface Booking {
     id: string;
     business_registration_id: string;
     customer_user_id: string;
+    customer_name: string;
+    customer_phone: string;
     service_type: 'ROOM' | 'TABLE' | 'SEAT';
     booking_date: string;
     time_slot: string;
@@ -191,4 +193,23 @@ export interface Booking {
         email: string;
         phone?: string;
     };
+}
+
+export interface BusinessRegistration {
+    id: string;
+    user_id: string;
+    business_name: string;
+    tax_code: string;
+    headquarters_address: string;
+    representative_name: string;
+    business_license_url: string;
+    representative_id_front_url: string;
+    representative_id_back_url: string;
+    business_type: 'HOTEL' | 'RESTAURANT' | 'ATTRACTION';
+    description?: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    admin_notes?: string;
+    created_at: string;
+    updated_at?: string;
+    user?: User;
 }
