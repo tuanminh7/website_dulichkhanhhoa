@@ -129,17 +129,24 @@ def resolve_chatbot_image(identifier: str) -> Optional[Dict[str, object]]:
                 if not primary:
                     primary = loc.images.first()
                 if primary and primary.image_url:
-                    # image_url in DB is like '/static/uploads/...'
-                    # We need to find the absolute path on disk
                     from flask import current_app
                     import os
-                    # Remove leading slash if present for os.path.join
-                    rel_path = primary.image_url.lstrip('/')
-                    # Path is usually relative to the backend root or static folder
-                    # Base on config.py, UPLOAD_FOLDER is os.path.join(basedir, 'static', 'uploads')
-                    # If image_url is '/static/uploads/abc.jpg', we need to map it correctly.
+                    from pathlib import Path
+
+                    # 1. Try UPLOAD_FOLDER + filename (Most robust for Docker)
+                    filename = os.path.basename(primary.image_url)
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder:
+                        abs_path = os.path.join(upload_folder, filename)
+                        if os.path.exists(abs_path):
+                            return {
+                                'slug': raw_identifier,
+                                'display_name': loc.name,
+                                'path': Path(abs_path)
+                            }
                     
-                    # Try direct mapping first
+                    # 2. Try direct mapping relative to backend root
+                    rel_path = primary.image_url.lstrip('/')
                     base_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
                     abs_path = os.path.join(base_dir, rel_path)
                     
@@ -161,6 +168,21 @@ def resolve_chatbot_image(identifier: str) -> Optional[Dict[str, object]]:
             if dish and dish.image_url:
                 from flask import current_app
                 import os
+                from pathlib import Path
+
+                # 1. Try UPLOAD_FOLDER + filename
+                filename = os.path.basename(dish.image_url)
+                upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                if upload_folder:
+                    abs_path = os.path.join(upload_folder, filename)
+                    if os.path.exists(abs_path):
+                        return {
+                            'slug': raw_identifier,
+                            'display_name': dish.name,
+                            'path': Path(abs_path)
+                        }
+
+                # 2. Try direct mapping
                 rel_path = dish.image_url.lstrip('/')
                 base_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
                 abs_path = os.path.join(base_dir, rel_path)

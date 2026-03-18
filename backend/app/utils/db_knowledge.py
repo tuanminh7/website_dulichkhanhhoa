@@ -78,7 +78,7 @@ def build_db_knowledge_text() -> str:
         except Exception as e:
             current_app.logger.warning(f"db_knowledge: could not load locations: {e}")
 
-        # ── Dishes ──────────────────────────────────────────────────────────
+        # ── Dishes ────────────────────────────
         try:
             dishes = Dish.query.order_by(Dish.name).all()
             for dish in dishes:
