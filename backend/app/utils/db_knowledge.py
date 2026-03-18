@@ -154,7 +154,7 @@ def get_db_image_list_for_prompt(message: str = '', max_images: int = 6) -> List
             if primary and primary.image_url:
                 results.append({
                     'name': loc.name,
-                    'image_url': primary.image_url,
+                    'image_url': f"/api/ai/img/loc_{loc.id}",
                     'location_id': loc.id,
                 })
 

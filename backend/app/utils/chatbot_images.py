@@ -119,6 +119,62 @@ def resolve_chatbot_image(identifier: str) -> Optional[Dict[str, object]]:
     if not raw_identifier:
         return None
 
+    if raw_identifier.startswith('loc_'):
+        try:
+            from app.models.location import Location
+            loc_id = int(raw_identifier.replace('loc_', ''))
+            loc = Location.query.get(loc_id)
+            if loc:
+                primary = loc.images.filter_by(is_primary=True).first()
+                if not primary:
+                    primary = loc.images.first()
+                if primary and primary.image_url:
+                    # image_url in DB is like '/static/uploads/...'
+                    # We need to find the absolute path on disk
+                    from flask import current_app
+                    import os
+                    # Remove leading slash if present for os.path.join
+                    rel_path = primary.image_url.lstrip('/')
+                    # Path is usually relative to the backend root or static folder
+                    # Base on config.py, UPLOAD_FOLDER is os.path.join(basedir, 'static', 'uploads')
+                    # If image_url is '/static/uploads/abc.jpg', we need to map it correctly.
+                    
+                    # Try direct mapping first
+                    base_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
+                    abs_path = os.path.join(base_dir, rel_path)
+                    
+                    if os.path.exists(abs_path):
+                        return {
+                            'slug': raw_identifier,
+                            'display_name': loc.name,
+                            'path': Path(abs_path)
+                        }
+        except Exception as e:
+            current_app.logger.error(f"Error resolving DB location image {raw_identifier}: {e}")
+        return None
+
+    if raw_identifier.startswith('dish_'):
+        try:
+            from app.models.dish import Dish
+            dish_id = int(raw_identifier.replace('dish_', ''))
+            dish = Dish.query.get(dish_id)
+            if dish and dish.image_url:
+                from flask import current_app
+                import os
+                rel_path = dish.image_url.lstrip('/')
+                base_dir = os.path.abspath(os.path.join(current_app.root_path, '..'))
+                abs_path = os.path.join(base_dir, rel_path)
+                
+                if os.path.exists(abs_path):
+                    return {
+                        'slug': raw_identifier,
+                        'display_name': dish.name,
+                        'path': Path(abs_path)
+                    }
+        except Exception as e:
+            current_app.logger.error(f"Error resolving DB dish image {raw_identifier}: {e}")
+        return None
+
     if raw_identifier.isdigit():
         return catalog['by_legacy_id'].get(raw_identifier)  # type: ignore[return-value]
 
