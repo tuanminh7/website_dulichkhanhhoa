@@ -21,19 +21,24 @@ def upgrade():
     
     # Check if business_types and registration_status enums exist
     bind = op.get_bind()
-    inspector = sa.inspect(bind)
-    existing_enums = [e['name'] for e in inspector.get_enums()]
-    
-    # Define the enums
-    business_types = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types')
-    registration_status = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status')
-    
-    # Create enums if they don't exist
-    if 'business_types' not in existing_enums:
-        business_types.create(bind)
-    
-    if 'registration_status' not in existing_enums:
-        registration_status.create(bind)
+    if bind.dialect.name == 'postgresql':
+        # Safely create enums in PostgreSQL using DO blocks
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'business_types') THEN CREATE TYPE business_types AS ENUM ('HOTEL', 'RESTAURANT', 'ATTRACTION'); END IF; END $$;")
+        op.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'registration_status') THEN CREATE TYPE registration_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED'); END IF; END $$;")
+    else:
+        # Fallback for other dialects (e.g. SQLite)
+        inspector = sa.inspect(bind)
+        existing_enums = [e['name'] for e in inspector.get_enums()]
+        
+        if 'business_types' not in existing_enums:
+            sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types').create(bind)
+        
+        if 'registration_status' not in existing_enums:
+            sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status').create(bind)
+
+    # Re-define business_types and registration_status for use in op.create_table
+    business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types')
+    registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status')
 
     # Add foreign key to post_comments with a name
     with op.batch_alter_table('post_comments', schema=None) as batch_op:
@@ -49,9 +54,9 @@ def upgrade():
         sa.Column('representative_name', sa.String(length=100), nullable=False),
         sa.Column('business_license_url', sa.String(length=255), nullable=False),
         sa.Column('representative_id_url', sa.String(length=255), nullable=False),
-        sa.Column('business_type', business_types, nullable=False),
+        sa.Column('business_type', business_types_enum, nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('status', registration_status, nullable=True),
+        sa.Column('status', registration_status_enum, nullable=True),
         sa.Column('admin_notes', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.Column('updated_at', sa.DateTime(), nullable=True),
