@@ -3,6 +3,7 @@ import Hero from '../../components/home/Hero';
 import { motion } from 'framer-motion';
 import { Landmark, ArrowRight, Bot, Calculator, ShieldCheck, Zap, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import overview from "../../assets/image/overview.webp"
 
 const categories = [
     { id: 1, name: 'DU LỊCH', icon: Landmark, color: 'bg-blue-500', path: '/locations?type=ATTRACTION', desc: 'Khám phá các di tích, hòn đảo và khu vui chơi.' },
@@ -64,7 +65,7 @@ const Home: React.FC = () => {
                     >
                         <div className="aspect-square rounded-[3rem] overflow-hidden shadow-2xl">
                             <img
-                                src="https://images.unsplash.com/photo-1559592413-7cea8378179b?q=80&w=2000&auto=format&fit=crop"
+                                src={overview}
                                 alt="Khánh Hòa Overview"
                                 className="w-full h-full object-cover"
                             />

@@ -45,29 +45,36 @@ def upgrade():
         business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types')
         registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status')
 
-    # Add foreign key to post_comments with a name
-    with op.batch_alter_table('post_comments', schema=None) as batch_op:
-        batch_op.create_foreign_key('fk_post_comments_parent', 'post_comments', ['parent_id'], ['id'])
+    # Add foreign key to post_comments with a name only if it doesn't exist
+    inspector = sa.inspect(bind)
+    existing_tables = inspector.get_table_names()
+    
+    if 'post_comments' in existing_tables:
+        existing_fks = inspector.get_foreign_keys('post_comments')
+        if not any(fk['name'] == 'fk_post_comments_parent' for fk in existing_fks):
+            with op.batch_alter_table('post_comments', schema=None) as batch_op:
+                batch_op.create_foreign_key('fk_post_comments_parent', 'post_comments', ['parent_id'], ['id'])
 
-    # Create business_registrations table
-    op.create_table('business_registrations',
-        sa.Column('id', sa.String(length=36), nullable=False),
-        sa.Column('user_id', sa.String(length=36), nullable=False),
-        sa.Column('business_name', sa.String(length=255), nullable=False),
-        sa.Column('tax_code', sa.String(length=50), nullable=False),
-        sa.Column('headquarters_address', sa.String(length=255), nullable=False),
-        sa.Column('representative_name', sa.String(length=100), nullable=False),
-        sa.Column('business_license_url', sa.String(length=255), nullable=False),
-        sa.Column('representative_id_url', sa.String(length=255), nullable=False),
-        sa.Column('business_type', business_types_enum, nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('status', registration_status_enum, nullable=True),
-        sa.Column('admin_notes', sa.Text(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-        sa.PrimaryKeyConstraint('id')
-    )
+    # Create business_registrations table only if it doesn't exist
+    if 'business_registrations' not in existing_tables:
+        op.create_table('business_registrations',
+            sa.Column('id', sa.String(length=36), nullable=False),
+            sa.Column('user_id', sa.String(length=36), nullable=False),
+            sa.Column('business_name', sa.String(length=255), nullable=False),
+            sa.Column('tax_code', sa.String(length=50), nullable=False),
+            sa.Column('headquarters_address', sa.String(length=255), nullable=False),
+            sa.Column('representative_name', sa.String(length=100), nullable=False),
+            sa.Column('business_license_url', sa.String(length=255), nullable=False),
+            sa.Column('representative_id_url', sa.String(length=255), nullable=False),
+            sa.Column('business_type', business_types_enum, nullable=False),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('status', registration_status_enum, nullable=True),
+            sa.Column('admin_notes', sa.Text(), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=True),
+            sa.Column('updated_at', sa.DateTime(), nullable=True),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+            sa.PrimaryKeyConstraint('id')
+        )
     # ### end Alembic commands ###
 
 
