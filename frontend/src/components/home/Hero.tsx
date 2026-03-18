@@ -5,6 +5,8 @@ import TextType from '../ui/TextType';
 import SplitText from '../ui/SplitText';
 import BlurText from '../ui/BlurText';
 
+import banner4 from '../../assets/image/banner-4.jpg';
+
 const Hero: React.FC = () => {
     return (
         <div className="relative h-[120vh] w-full overflow-hidden">
@@ -12,7 +14,7 @@ const Hero: React.FC = () => {
             <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
                 style={{
-                    backgroundImage: "url('/src/assets/image/banner-4.jpg')",
+                    backgroundImage: `url(${banner4})`,
                 }}
             >
                 <div className="absolute inset-0 bg-linear-to-b from-black/40 via-black/20 to-black/60" />

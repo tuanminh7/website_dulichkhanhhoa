@@ -9,7 +9,7 @@ const Navbar: React.FC = () => {
     const { user, logout, isAdmin, isBusiness, loading } = useAuth();
 
     const navLinks = [
-        { name: 'DU LỊCH', path: '/locations' },
+        { name: 'Địa điểm', path: '/locations' },
         { name: 'Doanh nghiệp', path: '/businesses' },
         { name: 'Tin tức', path: '/news' },
         { name: 'Tư vấn AI', path: '/chatbot' },
@@ -19,8 +19,6 @@ const Navbar: React.FC = () => {
     const handleLogout = () => {
         logout();
     };
-
-
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/50 backdrop-blur-xl border-b border-gray-100 shadow-sm">
