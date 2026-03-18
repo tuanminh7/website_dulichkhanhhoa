@@ -8,20 +8,24 @@ class ChatSession(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
+    guest_token_hash = db.Column(db.String(64), nullable=True)
     title = db.Column(db.String(200))
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     messages = db.relationship('ChatMessage', backref='session', lazy='dynamic', cascade='all, delete-orphan')
 
-    def to_dict(self):
-        return {
+    def to_dict(self, guest_token=None):
+        data = {
             'id': self.id,
             'user_id': self.user_id,
             'title': self.title,
             'started_at': self.started_at.isoformat(),
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }
+        if guest_token and self.user_id is None:
+            data['guest_token'] = guest_token
+        return data
 
 
 class ChatMessage(db.Model):

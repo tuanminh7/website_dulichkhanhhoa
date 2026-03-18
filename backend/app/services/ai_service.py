@@ -5,6 +5,7 @@ import threading
 from typing import List, Dict, Optional
 
 from app.utils.chatbot_images import (
+    find_best_chatbot_image,
     find_explicit_chatbot_images,
     find_relevant_chatbot_images,
     get_chatbot_image_dir,
@@ -161,13 +162,101 @@ class GeminiAIService:
         extend(find_relevant_chatbot_images(source_text, max_images=max_images))
         return selected
 
-    def append_relevant_images(self, response_text: str, source_text: str, max_images: int = 2) -> str:
+    def _strip_existing_image_markdown(self, text: str) -> str:
+        if not text:
+            return text
+
+        cleaned = re.sub(r'\n?\s*!\[[^\]]*?\]\([^)]*?\)\s*\n?', '\n', text)
+        cleaned = re.sub(r'\n\s*[AaẢả][^\n]*minh[^\n]*h[oọ]a\s*:\s*\n?', '\n', cleaned)
+        cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+        return cleaned.strip()
+
+    def _extract_place_candidate(self, line: str) -> str:
+        candidate = (line or '').strip()
+        if not candidate:
+            return ''
+
+        candidate = re.sub(r'^\s*(?:[-*•]|\d+[.)])\s*', '', candidate)
+        candidate = candidate.replace('**', '').strip()
+
+        for pattern in (r'\s*:\s*', r'\s+[–—-]\s+', r'\s+\(\s*', r'\s{2,}'):
+            parts = re.split(pattern, candidate, maxsplit=1)
+            if parts and parts[0].strip():
+                candidate = parts[0].strip()
+                break
+
+        candidate = candidate.strip(' .:-')
+        return candidate if len(candidate) >= 3 else ''
+
+    def _inject_inline_images(self, response_text: str, source_text: str, max_images: int = 5) -> str:
+        cleaned = self._strip_existing_image_markdown(response_text)
+        if not cleaned:
+            return response_text
+
+        used_slugs = set()
+        inserted_count = 0
+        result_lines = []
+
+        for line in cleaned.splitlines():
+            result_lines.append(line)
+
+            if inserted_count >= max_images or not line.strip():
+                continue
+
+            place_candidate = self._extract_place_candidate(line)
+            if not place_candidate:
+                continue
+
+            image = find_best_chatbot_image(place_candidate)
+            if not image:
+                continue
+
+            slug = str(image['slug'])
+            if slug in used_slugs:
+                continue
+
+            display_name = str(image['display_name'])
+            result_lines.append(f"![{display_name}](/api/ai/img/{slug})")
+            used_slugs.add(slug)
+            inserted_count += 1
+
+        if inserted_count == 0:
+            fallback_image = find_best_chatbot_image(source_text)
+            if fallback_image:
+                display_name = str(fallback_image['display_name'])
+                slug = str(fallback_image['slug'])
+                result_lines.extend(['', f"![{display_name}](/api/ai/img/{slug})"])
+
+        merged = '\n'.join(result_lines)
+        return re.sub(r'\n{3,}', '\n\n', merged).strip()
+
+    def _get_relevant_image_markdown(self, message: str, max_images: int = 5) -> str:
+        try:
+            image_dir = get_chatbot_image_dir()
+            if image_dir is None:
+                return ''
+
+            selected = find_explicit_chatbot_images(message, max_images=max_images)
+            if not selected:
+                keywords = self._extract_keywords(message)
+                selected = find_relevant_chatbot_images(message, keywords=keywords, max_images=max_images)
+            if not selected:
+                return ''
+
+            lines = []
+            for image in selected:
+                display_name = str(image['display_name'])
+                slug = str(image['slug'])
+                lines.append(f"- slug={slug}: `![{display_name}](/api/ai/img/{slug})` -> {display_name}")
+            return '\n'.join(lines)
+        except Exception as e:
+            current_app.logger.error(f"Error listing filtered images: {str(e)}")
+            return ''
+
+    def append_relevant_images(self, response_text: str, source_text: str, max_images: int = 5) -> str:
         if not response_text:
             return response_text
-        image_gallery = self._build_image_gallery_markdown(source_text, max_images=max_images)
-        if not image_gallery:
-            return response_text
-        return response_text + image_gallery
+        return self._inject_inline_images(response_text, source_text, max_images=max_images)
 
     def _parse_api_keys(self) -> List[str]:
         raw_values = []
@@ -346,7 +435,7 @@ class GeminiAIService:
         system_instruction = self._get_system_instruction(message, context)
 
         chat_generation_config = dict(self.generation_config)
-        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 1200)
+        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 2048)
 
         # Build proper Gemini chat history format
         gemini_history = []
@@ -375,10 +464,10 @@ class GeminiAIService:
         return message
 
     def chat_stream(self, message: str, context: Dict = None, chat_history: List[Dict] = None):
-        """Chat với AI mode streaming"""
+        """Stream Gemini response without truncating the answer mid-way."""
         system_instruction = self._get_system_instruction(message, context)
         chat_generation_config = dict(self.generation_config)
-        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 1200)
+        chat_generation_config['max_output_tokens'] = min(chat_generation_config.get('max_output_tokens', 8192), 2048)
 
         gemini_history = []
         if chat_history:
@@ -391,9 +480,6 @@ class GeminiAIService:
 
         for api_key in ordered_keys:
             key_label = self._api_key_label(api_key)
-            emitted_length = 0
-            collected_chunks = []
-            truncated = False
             yielded_any = False
             try:
                 with self._genai_lock:
@@ -407,24 +493,14 @@ class GeminiAIService:
 
                     for chunk in response_stream:
                         try:
-                            if not chunk.text:
+                            text = getattr(chunk, 'text', '')
+                            if not text:
                                 continue
                             yielded_any = True
-                            collected_chunks.append(chunk.text)
-                            emitted_length += len(chunk.text)
-                            yield chunk.text
-                            if emitted_length >= 3500:
-                                truncated = True
-                                yield "\n\nBạn muốn mình tiếp tục gợi ý thêm không? Mình có thể chia nhỏ theo từng nhóm địa điểm."
-                                break
+                            yield text
                         except Exception:
                             pass
 
-                if not truncated:
-                    full_text = ''.join(collected_chunks)
-                    image_gallery = self._build_image_gallery_markdown(f"{message}\n{full_text}")
-                    if image_gallery:
-                        yield image_gallery
                 current_app.logger.info(
                     f"Gemini chat_stream succeeded with {key_label}"
                 )
@@ -436,7 +512,7 @@ class GeminiAIService:
                     f"Gemini chat_stream failed with {key_label}: {str(e)}"
                 )
                 if yielded_any:
-                    yield "\n\nXin lỗi, kết nối tới AI bị gián đoạn. Bạn hãy gửi lại câu hỏi giúp mình nhé."
+                    yield "\n\nXin loi, ket noi toi AI bi gian doan. Ban hay gui lai cau hoi giup minh nhe."
                     return
                 if not should_try_next:
                     break
@@ -447,9 +523,7 @@ class GeminiAIService:
             raise ValueError("No Gemini API key available")
         except Exception as e:
             current_app.logger.error(f"Gemini chat stream error: {str(e)}")
-            yield f"Xin lỗi, đã có lỗi: {str(e)}"
-
-
+            yield f"Xin loi, da co loi: {str(e)}"
     def generate_itinerary(self, preferences: Dict) -> Dict:
         """
         Generate travel itinerary based on preferences
@@ -577,6 +651,51 @@ QUY TẮC TRẢ LỜI BẮT BUỘC:
 - Không liệt kê toàn bộ dữ liệu bạn biết trong một lần trả lời.
 - Không nhắc lại trùng lặp cùng một địa điểm hoặc cùng một ý.
 - Nếu câu trả lời dài, hãy ưu tiên cắt gọn và kết bằng lời đề nghị: 'Nếu bạn muốn, mình sẽ gợi ý thêm phần tiếp theo.'
+
+QUY TẮC ĐỊNH DẠNG:
+- Không dùng tiêu đề Markdown kiểu #, ##, ###.
+- Không lạm dụng in đậm.
+- Ưu tiên danh sách gạch đầu dòng ngắn.
+- Không tạo đoạn văn quá dài.
+
+QUY TẮC HÌNH ẢNH:
+{image_rules}
+
+PHONG CÁCH:
+- Thân thiện, thực tế, đúng trọng tâm.
+- Ưu tiên gợi ý có thể áp dụng ngay.
+
+KIẾN THỨC LIÊN QUAN ĐẾN CÂU HỎI HIỆN TẠI:
+{relevant_knowledge}
+"""
+
+    def _build_tourism_system_prompt(self, message: str = '') -> str:
+        """Build system prompt for tourism assistant"""
+        relevant_knowledge = self._get_relevant_knowledge(message)
+        image_list_str = self._get_relevant_image_markdown(message)
+
+        image_rules = (
+            "- Nếu nhắc đến một địa điểm cụ thể và có ảnh khớp, phải đặt ảnh ngay bên dưới dòng mô tả của chính địa điểm đó.\n"
+            "- Không gom ảnh thành một cụm minh họa chung ở cuối câu trả lời.\n"
+            "- Không dùng ảnh của địa điểm A để minh họa cho địa điểm B.\n"
+            "- Mỗi địa điểm chỉ gắn tối đa 1 ảnh, toàn bộ câu trả lời tối đa 5 ảnh.\n"
+        )
+        if image_list_str:
+            image_rules += "- Khi liệt kê nhiều địa điểm, ưu tiên format: `- Tên địa điểm: mô tả ngắn` rồi ngay dòng dưới là markdown ảnh của đúng địa điểm đó.\n"
+            image_rules += "- Chỉ được dùng chính xác các markdown ảnh sau:\n" + image_list_str
+        else:
+            image_rules += "- Nếu không có ảnh khớp rõ ràng thì chỉ trả lời bằng chữ.\n"
+
+        return f"""Bạn là trợ lý du lịch thông minh chuyên về du lịch địa phương Việt Nam, đặc biệt là Ninh Thuận và Khánh Hòa.
+
+QUY TẮC TRẢ LỜI BẮT BUỘC:
+- Trả lời ngắn gọn, dễ đọc, ưu tiên chất lượng hơn số lượng.
+- Với câu hỏi gợi ý địa điểm, chỉ chọn 3 đến 5 địa điểm phù hợp nhất.
+- Mỗi địa điểm chỉ mô tả 1 đến 2 ý ngắn.
+- Nếu người dùng hỏi rộng, hãy trả lời tóm tắt trước rồi hỏi họ có muốn đào sâu thêm không.
+- Không liệt kê toàn bộ dữ liệu bạn biết trong một lần trả lời.
+- Không nhắc lặp cùng một địa điểm hoặc cùng một ý.
+- Nếu câu trả lời dài, hãy cắt gọn và kết bằng: 'Nếu bạn muốn, mình sẽ gợi ý thêm phần tiếp theo.'
 
 QUY TẮC ĐỊNH DẠNG:
 - Không dùng tiêu đề Markdown kiểu #, ##, ###.

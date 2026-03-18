@@ -200,8 +200,8 @@ export const authService = {
 };
 
 export const chatService = {
-    getSessions: () => getCached<ChatSession[]>('/ai/sessions'),
-    getSessionMessages: (sessionId: number) => getCached<ChatMessage[]>(`/ai/sessions/${sessionId}/messages`),
+    getSessions: () => api.get<ChatSession[]>('/ai/sessions'),
+    getSessionMessages: (sessionId: number) => api.get<ChatMessage[]>(`/ai/sessions/${sessionId}/messages`),
     sendMessage: (sessionId: number, message: string) => api.post<{ response: string, session_id: number, ai_message: ChatMessage }>('/ai/chat', { session_id: sessionId, message }),
     createSession: (title: string) => api.post<ChatSession>('/ai/sessions', { title }),
 };

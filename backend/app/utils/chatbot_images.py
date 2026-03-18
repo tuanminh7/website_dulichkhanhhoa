@@ -194,3 +194,15 @@ def find_explicit_chatbot_images(text: str, max_images: int = 2) -> List[Dict[st
 
     selected.sort(key=lambda item: (-item[0], item[1], item[2]))
     return [item for _, _, _, item in selected[:max_images]]
+
+
+def find_best_chatbot_image(text: str) -> Optional[Dict[str, object]]:
+    matches = find_explicit_chatbot_images(text, max_images=1)
+    if matches:
+        return matches[0]
+
+    matches = find_relevant_chatbot_images(text, max_images=1)
+    if matches:
+        return matches[0]
+
+    return None

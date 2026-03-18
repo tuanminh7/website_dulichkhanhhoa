@@ -6,6 +6,7 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN chmod +x /webapp/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /webapp/docker-entrypoint.sh \
+    && chmod +x /webapp/docker-entrypoint.sh
 
 CMD ["/webapp/docker-entrypoint.sh"]

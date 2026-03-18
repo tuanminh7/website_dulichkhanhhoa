@@ -324,6 +324,38 @@ make docker-down
 
 ---
 
+## 📊 Phân tích log server
+
+Repo có sẵn tool CLI để phân tích log Flask/Gunicorn:
+
+```bash
+python backend/tools/analyze_logs.py backend/backend.log
+```
+
+Một vài ví dụ hữu ích:
+
+```bash
+python backend/tools/analyze_logs.py backend/backend.log --top 5
+python backend/tools/analyze_logs.py backend/backend.log --status 403
+python backend/tools/analyze_logs.py backend/backend.log --keyword /api/ai/chat
+python backend/tools/analyze_logs.py backend/backend.log --json --output log-report.json
+python backend/tools/analyze_logs.py backend/backend.log --watch --refresh 3 --clear
+python backend/tools/analyze_logs.py backend/backend.log --watch --from-end --keyword /api/ai/chat
+docker compose logs -f backend | python backend/tools/analyze_logs.py - --watch --refresh 3
+docker compose logs -f --no-log-prefix backend | python backend/tools/analyze_logs.py - --watch --refresh 3 --keyword /api/ai/chat
+```
+
+Tool này hỗ trợ:
+
+- đếm tổng số request
+- thống kê HTTP status, method, endpoint, IP
+- lọc theo `keyword`, `level`, `status`
+- xuất báo cáo JSON để lưu hoặc xử lý tiếp
+- chạy chế độ realtime với `--watch` để theo dõi log song song khi server đang chạy
+- đọc stream trực tiếp từ `docker compose logs -f` qua `stdin` khi backend chạy trong Docker
+
+---
+
 ## 🔌 API Endpoints
 
 ### Authentication
@@ -458,7 +490,10 @@ Mọi đóng góp đều được chào đón! Vui lòng làm theo các bước:
 
 ## 📝 License
 
-Dự án này được phát hành dưới giấy phép MIT License - xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+Dự án này được phát hành dưới giấy phép **MIT License**.
+
+- File giấy phép: [LICENSE](LICENSE)
+- Bạn có thể sử dụng, chỉnh sửa, phân phối và tái sử dụng mã nguồn theo điều khoản của MIT License.
 
 ---
 

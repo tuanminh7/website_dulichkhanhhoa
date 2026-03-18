@@ -1,0 +1,273 @@
+LOGIC CHATBOT HIEN TAI
+
+1. Tong quan
+- Chatbot duoc thiet ke theo mo hinh frontend React + backend Flask + Gemini AI.
+- Frontend gui tin nhan den endpoint `/api/ai/chat`.
+- Backend tra ve du lieu theo dang SSE (`text/event-stream`) de hien thi stream tung phan.
+- Sau khi AI tra loi xong, backend hau xu ly de chen anh minh hoa dung dia diem ngay trong noi dung.
+- Frontend tu dong thay noi dung da stream bang phien ban cuoi cung co anh neu backend gui `replace_text`.
+
+2. Thanh phan chinh
+- Backend route chat: `backend/app/routes/ai.py`
+- Service AI: `backend/app/services/ai_service.py`
+- Logic tim anh: `backend/app/utils/chatbot_images.py`
+- Frontend chatbot: `frontend/src/pages/guest/Chatbot.tsx`
+
+3. Luong request chat tu frontend den backend
+- Nguoi dung nhap cau hoi trong trang chatbot guest.
+- Frontend tao 1 message USER tam thoi va dua ngay len giao dien.
+- Frontend goi `fetch('/api/ai/chat')` voi payload:
+  - `message`
+  - `session_id`
+  - `guest_token`
+- Neu user da dang nhap thi frontend tu them header `Authorization: Bearer ...`.
+- Backend tra ve SSE theo tung dong `data: {...}`.
+
+4. Co che session chat
+- Neu user da dang nhap:
+  - session gan voi `user_id`
+  - chi user do moi duoc xem lai lich su session
+- Neu la guest:
+  - backend tao `guest_token` moi khi mo session moi
+  - backend chi luu hash cua token: `guest_token_hash`
+  - frontend giu `guest_token` de gui lai cho cac lan nhan tiep theo
+  - guest chi doc duoc session cua minh neu token khop
+
+5. Gioi han va bao ve
+- Guest co gioi han so luot chat thu:
+  - key cache: `guest_chat_limit:<ip>`
+  - hien tai khoa sau 3 luot chat guest
+- Rate limit chung:
+  - key cache: `rate_limit:<requester_id>`
+  - toi da 5 request trong 60 giay
+- Neu vuot guest limit:
+  - backend tra `403`
+  - `error = GUEST_LIMIT_REACHED`
+  - frontend mo modal yeu cau dang nhap
+
+6. Cach backend xu ly mot request chat
+- Doc `message`, `session_id`, `guest_token`
+- Kiem tra quyen truy cap session
+- Neu chua co session hop le:
+  - tao session moi
+  - voi guest se tao them `guest_token`
+- Lay 10 tin nhan gan nhat trong session lam `chat_history`
+- Neu user da dang nhap thi bo sung `context.user_preferences`
+- Tao cache key dua tren:
+  - `session_id`
+  - `user_id`
+  - `message`
+  - `history`
+  - `context`
+- Neu da co cache:
+  - backend stream luon text da cache
+- Neu chua co cache:
+  - backend goi `ai_service.chat_stream(...)`
+  - stream tung chunk text ve frontend
+
+7. Din dang SSE dang su dung
+- Backend gui cac goi sau:
+  - `{"session_id": ...}`
+  - `{"guest_token": ...}` neu la guest session moi
+  - `{"text": "..."}` cho tung chunk stream
+  - `{"replace_text": "..."}` neu backend da chen anh vao ban cuoi
+  - `{"done": true, "ai_message": {...}}` khi ket thuc va luu DB xong
+
+8. Logic AI trong GeminiAIService
+- Service doc du lieu kien thuc tu file:
+  - `backend/app/data/data_chat.txt`
+- Khi nhan cau hoi:
+  - chuan hoa text
+  - tach keyword
+  - tim cac doan knowledge lien quan nhat
+- Service ho tro nhieu API key Gemini:
+  - doc tu `GEMINI_API_KEY` hoac `GEMINI_API_KEYS`
+  - xoay vong key de tranh quota
+  - neu key loi va loi thuoc nhom co the retry thi thu key tiep theo
+- Model hien tai:
+  - mac dinh `models/gemini-2.5-flash`
+- He thong co 2 che do:
+  - `chat()` cho non-stream
+  - `chat_stream()` cho stream realtime
+
+9. Prompt system cua chatbot
+- Prompt bat chatbot phai:
+  - tra loi gon, de doc
+  - neu la goi y dia diem chi nen chon 3-5 dia diem phu hop nhat
+  - moi dia diem mo ta 1-2 y ngan
+  - khong liet ke qua dai
+  - uu tien dang danh sach
+- Prompt cung co rule rieng cho anh:
+  - neu nhac dia diem cu the va co anh khop thi phai gan anh dung dia diem do
+  - khong duoc lay anh dia diem A de minh hoa dia diem B
+  - moi dia diem toi da 1 anh
+  - toan bo cau tra loi toi da 5 anh
+  - uu tien format:
+    - `- Ten dia diem: mo ta ngan`
+    - dong duoi la markdown anh cua chinh dia diem do
+
+10. Logic tim anh minh hoa
+- Thu muc anh duoc tim theo uu tien:
+  - `backend/static/images/anh`
+  - `backend/app/static/images/anh`
+  - fallback:
+    - `backend/static/uploads`
+    - `backend/app/static/uploads`
+- He thong tao catalog anh gom:
+  - `slug`
+  - `display_name`
+  - `filename`
+  - `normalized_name`
+  - `path`
+- Co 3 ham tim anh chinh:
+  - `find_relevant_chatbot_images()`
+  - `find_explicit_chatbot_images()`
+  - `find_best_chatbot_image()`
+- `find_best_chatbot_image()` uu tien match ro rang truoc, neu khong co moi fallback sang match keyword lien quan.
+
+11. Cach backend chen anh vao cau tra loi
+- Sau khi AI stream xong, backend goi:
+  - `append_relevant_images(full_response, f"{message}\n{full_response}")`
+- Bên trong:
+  - xoa bo markdown anh cu neu co
+  - duyet tung dong trong cau tra loi
+  - rut ten dia diem tu tung dong
+  - tim anh khop nhat cho dong do
+  - chen markdown ngay sau dong mo ta dia diem
+- Neu khong chen duoc anh nao trong tung dong:
+  - backend tim 1 anh fallback dua tren ca cau hoi + cau tra loi
+  - chen anh fallback o cuoi
+
+12. Endpoint tra anh
+- Backend co route:
+  - `/api/ai/img/<slug>`
+- Route nay:
+  - resolve slug thanh file anh that
+  - tra file bang `send_file`
+- Frontend chi can dung markdown:
+  - `![Ten](/api/ai/img/slug)`
+
+13. Cach frontend render stream + anh
+- Frontend doc `ReadableStream` tu response SSE
+- Tach theo tung dong bat dau bang `data: `
+- Neu nhan `text`:
+  - cong don vao `currentText`
+  - cap nhat message AI dang hien thi
+- Neu nhan `replace_text`:
+  - thay toan bo noi dung message AI bang ban cuoi cung tu backend
+  - day la buoc quan trong de hien thi phien ban da chen anh
+- Khi render:
+  - frontend tach markdown anh theo regex
+  - neu gap `![alt](url)` thi render thanh the `img`
+  - neu url khong phai `http` thi dung duong dan noi bo `/api/ai/...`
+- Neu anh loi:
+  - frontend an block anh do
+
+14. Tai sao truoc day bot co luc co log chen anh nhung UI khong hien anh
+- Truoc day luong stream chi gui `text` trong khi anh duoc chen sau khi stream xong.
+- Frontend dang hien thi ban da stream truoc do, nen co the van la phien ban khong co anh.
+- Sau khi cap nhat:
+  - backend gui them `replace_text`
+  - frontend thay noi dung bang ban cuoi cung
+  - nhung anh duoc backend chen se xuat hien tren UI
+
+15. Tai sao truoc day cau tra loi bi ngat
+- Trong `chat_stream()` tung ton tai logic cat dung khi do dai phat ra vuot nguong khoang 3500 ky tu.
+- He thong da duoc chinh de khong tu dong cat giua chung theo nguong do nua.
+- Ngoai ra `max_output_tokens` cho chat da duoc nang len 2048 de co the tra loi day du hon.
+
+16. Cache chatbot
+- Cache key duoc tao tu:
+  - noi dung message
+  - lich su 10 tin nhan gan nhat
+  - context user preferences
+  - thong tin session
+- Muc dich:
+  - tranh goi AI lai cho cung mot ngu canh
+- Thoi gian cache hien tai:
+  - 3600 giay
+- Khong cache neu phan hoi bat dau bang kieu "xin loi ..."
+
+17. Luu lich su chat
+- Sau khi xong response:
+  - luu 1 `ChatMessage` cho USER
+  - luu 1 `ChatMessage` cho AI
+- Khi luu thanh cong:
+  - backend gui goi `done`
+  - frontend thay message tam bang `ai_message` chinh thuc tu DB
+
+18. Chat history tren frontend
+- Neu user da dang nhap:
+  - frontend tai danh sach session bang `chatService.getSessions()`
+  - khi chon session thi goi `getSessionMessages(id)`
+- Neu guest:
+  - frontend khong tai lich su server-side theo danh sach
+  - session guest hien tai duoc giu bang `session_id + guest_token`
+
+19. Production va Docker
+- Frontend va backend chay qua Docker Compose.
+- Frontend Nginx proxy `/api/` ve backend.
+- Rieng `/api/ai/chat` duoc tat buffering:
+  - `proxy_buffering off`
+  - `proxy_request_buffering off`
+  - `proxy_read_timeout 300s`
+  - `X-Accel-Buffering: no`
+- Muc dich:
+  - SSE stream duoc day ve trinh duyet theo thoi gian thuc
+- Neu khong tat buffering thi stream co the bi gom chunk va UI se hien thi cham hoac khong dung.
+
+20. Van de da tung gap va da duoc xu ly
+- Loi logger:
+  - truoc day dung `extra={'message': ...}` lam Python logging crash
+  - da doi sang `user_message_preview`
+- Loi docker log analyzer:
+  - da them che do watch va xu ly prefix Docker log
+- Loi chatbot tra ve sai gallery:
+  - da doi sang logic anh inline theo tung dia diem
+- Loi UI khong nhan phien ban da chen anh:
+  - da them `replace_text`
+
+21. Han che hien tai can biet
+- Chatbot phu thuoc chat luong ten file anh:
+  - ten file cang gan ten dia diem thi matching cang tot
+- Matching anh hien tai dua nhieu vao token text:
+  - neu ten dia diem viet qua khac ten file, co the khong tim dung anh
+- `backend/app/services/ai_service.py` hien van co dau hieu trung lap mot so ham prompt cu:
+  - ve mat logic, he thong dang chay theo ban ham o cuoi file
+  - nen don file nay gon lai sau de de bao tri hon
+- Secret JWT trong production nen dai hon 32 ky tu de tranh warning bao mat
+
+22. Cach test nhanh logic chatbot
+- Test chat:
+  - gui cau hoi co chua ten dia diem cu the
+  - kiem tra bot co text + anh dung dia diem do hay khong
+- Test image route:
+  - mo truc tiep `/api/ai/img/<slug>`
+- Test log backend:
+  - `docker compose logs -f --no-log-prefix backend`
+- Dau hieu thanh cong:
+  - log co `Gemini chat_stream succeeded ...`
+  - log co `Injected inline chatbot images into response`
+  - UI hien thi markdown anh thanh hinh that
+
+23. File lien quan de sua sau nay
+- Backend:
+  - `backend/app/routes/ai.py`
+  - `backend/app/services/ai_service.py`
+  - `backend/app/utils/chatbot_images.py`
+  - `backend/app/models/ai.py`
+- Frontend:
+  - `frontend/src/pages/guest/Chatbot.tsx`
+- Ha tang:
+  - `frontend/nginx.local.conf`
+  - `frontend/nginx.conf`
+  - `docker-compose.yml`
+
+24. Ket luan logic hien tai
+- Frontend gui chat theo SSE.
+- Backend stream text tu Gemini.
+- Backend hau xu ly de chen anh inline dung dia diem.
+- Backend gui `replace_text` de frontend thay bang ban cuoi co anh.
+- Session guest duoc bao ve bang `guest_token`.
+- Session user duoc gan voi `user_id`.
+- Cache, rate limit, guest limit va proxy SSE da duoc tinh toi theo huong production.

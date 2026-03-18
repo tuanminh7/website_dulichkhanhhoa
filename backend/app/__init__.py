@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from redis import Redis
 from redis.exceptions import RedisError
 from sqlalchemy import inspect, text
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import config
 
@@ -145,6 +146,8 @@ def ensure_schema_compatibility():
             if 'updated_at' not in chat_columns:
                 connection.execute(text('ALTER TABLE chat_sessions ADD COLUMN updated_at TIMESTAMP'))
                 connection.execute(text('UPDATE chat_sessions SET updated_at = started_at WHERE updated_at IS NULL'))
+            if 'guest_token_hash' not in chat_columns:
+                connection.execute(text('ALTER TABLE chat_sessions ADD COLUMN guest_token_hash VARCHAR(64)'))
 
         if 'saved_itineraries' in table_names:
             itinerary_columns = {column['name'] for column in inspect(engine).get_columns('saved_itineraries')}
@@ -162,6 +165,16 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
 
     app = Flask(__name__)
+
+    trusted_proxy_count = int(os.environ.get('TRUST_PROXY_COUNT', '1' if config_name == 'production' else '0'))
+    if trusted_proxy_count > 0:
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app,
+            x_for=trusted_proxy_count,
+            x_proto=trusted_proxy_count,
+            x_host=trusted_proxy_count,
+            x_port=trusted_proxy_count,
+        )
 
     from flask_cors import CORS
     CORS(app, supports_credentials=True)

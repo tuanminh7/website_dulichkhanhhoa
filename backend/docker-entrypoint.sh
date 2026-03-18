@@ -2,4 +2,9 @@
 set -e
 
 python manage.py bootstrap-production
-exec gunicorn --bind 0.0.0.0:${PORT:-5000} manage:app
+exec gunicorn \
+  --bind 0.0.0.0:${PORT:-5000} \
+  --access-logfile - \
+  --error-logfile - \
+  --capture-output \
+  manage:app

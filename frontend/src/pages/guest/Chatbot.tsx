@@ -9,38 +9,99 @@ import { useAuth } from '../../context/AuthContext';
 const Chatbot: React.FC = () => {
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+    const [guestSessionToken, setGuestSessionToken] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [showLimitModal, setShowLimitModal] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isFetching = useRef(false);
-    const isCreating = useRef(false);
+    const telemetrySent = useRef(new Set<string>());
     const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!isFetching.current) {
             if (user) {
+                if (guestSessionToken) {
+                    setGuestSessionToken(null);
+                    setCurrentSessionId(null);
+                    setMessages([]);
+                }
                 fetchSessions();
             } else {
                 // If we lose user, clear everything
                 setSessions([]);
                 setCurrentSessionId(null);
+                setGuestSessionToken(null);
                 setMessages([]);
             }
         }
     }, [user]);
 
     useEffect(() => {
-        if (currentSessionId) {
+        if (user && currentSessionId) {
             fetchMessages(currentSessionId);
         }
-    }, [currentSessionId]);
+    }, [currentSessionId, user]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isTyping]);
+
+    const extractImageSlug = (imageUrl: string) => {
+        try {
+            const normalizedUrl = imageUrl.startsWith('http') ? new URL(imageUrl).pathname : imageUrl;
+            const cleanPath = normalizedUrl.split('?')[0].replace(/\/+$/, '');
+            return cleanPath.split('/').pop() || null;
+        } catch {
+            return null;
+        }
+    };
+
+    const trackChatbotTelemetry = (payload: {
+        event_type: 'client_image_loaded' | 'client_image_error' | 'client_stream_missing_done';
+        session_id?: number | null;
+        message_id?: number | null;
+        image_url?: string;
+    }) => {
+        const imageSlug = payload.image_url ? extractImageSlug(payload.image_url) : null;
+        const dedupeKey = [
+            payload.event_type,
+            payload.session_id ?? 'none',
+            payload.message_id ?? 'none',
+            imageSlug ?? payload.image_url ?? 'no-image',
+        ].join(':');
+
+        if (telemetrySent.current.has(dedupeKey)) {
+            return;
+        }
+        telemetrySent.current.add(dedupeKey);
+
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+        };
+        if (token && token !== 'null') {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        fetch('/api/ai/telemetry', {
+            method: 'POST',
+            headers,
+            keepalive: true,
+            body: JSON.stringify({
+                event_type: payload.event_type,
+                session_id: payload.session_id,
+                message_id: payload.message_id,
+                image_slug: imageSlug,
+                image_url: payload.image_url,
+            })
+        }).catch((error) => {
+            console.error('Error sending chatbot telemetry:', error);
+            telemetrySent.current.delete(dedupeKey);
+        });
+    };
 
     const fetchSessions = async () => {
         if (!user || isFetching.current) return;
@@ -92,24 +153,9 @@ const Chatbot: React.FC = () => {
         setIsTyping(true);
 
         let sessionId = currentSessionId;
+        let nextGuestToken = guestSessionToken;
         
         try {
-            // Lazy create session if it's new
-            if (sessionId === null) {
-                if (isCreating.current) return;
-                isCreating.current = true;
-                try {
-                    // Use truncated first message as title
-                    const title = input.length > 30 ? input.substring(0, 30) + '...' : input;
-                    const res = await chatService.createSession(title);
-                    sessionId = res.data.id;
-                    setCurrentSessionId(sessionId);
-                    setSessions(prev => [res.data, ...prev]);
-                } finally {
-                    isCreating.current = false;
-                }
-            }
-
             const token = localStorage.getItem('token');
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json'
@@ -121,7 +167,11 @@ const Chatbot: React.FC = () => {
             const response = await fetch(`/api/ai/chat`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ session_id: sessionId, message: input })
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    message: input,
+                    guest_token: nextGuestToken
+                })
             });
 
             if (!response.ok) {
@@ -162,6 +212,12 @@ const Chatbot: React.FC = () => {
 
                         if (data.session_id && !currentSessionId) {
                             setCurrentSessionId(data.session_id);
+                            sessionId = data.session_id;
+                        }
+
+                        if (data.guest_token) {
+                            nextGuestToken = data.guest_token;
+                            setGuestSessionToken(data.guest_token);
                         }
 
                         if (data.text) {
@@ -184,9 +240,36 @@ const Chatbot: React.FC = () => {
                             });
                         }
 
+                        if (typeof data.replace_text === 'string') {
+                            currentText = data.replace_text;
+                            setMessages(prev => {
+                                const lastMsg = prev[prev.length - 1];
+                                if (lastMsg && lastMsg.sender_type === 'AI' && lastMsg.id === aiMessageId) {
+                                    return [...prev.slice(0, -1), { ...lastMsg, message_content: currentText }];
+                                }
+
+                                const newMsg: ChatMessage = {
+                                    id: aiMessageId || Date.now() + 1,
+                                    session_id: sessionId || data.session_id || 0,
+                                    sender_type: 'AI',
+                                    message_content: currentText,
+                                    created_at: new Date().toISOString()
+                                };
+                                aiMessageId = newMsg.id;
+                                return [...prev, newMsg];
+                            });
+                        }
+
                         if (data.done && data.ai_message) {
                             didReceiveDone = true;
-                            setMessages(prev => prev.map(m => (m.sender_type === 'AI' && (m.id === aiMessageId || !m.id)) ? data.ai_message : m));
+                            setMessages(prev => prev.map(m => (
+                                m.sender_type === 'AI' && (m.id === aiMessageId || !m.id)
+                                    ? { ...data.ai_message, id: aiMessageId || data.ai_message.id }
+                                    : m
+                            )));
+                            if (user) {
+                                fetchSessions();
+                            }
                         }
                     } catch (e) {
                         console.error('Error parsing SSE data:', e);
@@ -197,6 +280,11 @@ const Chatbot: React.FC = () => {
             }
 
             if (!didReceiveDone && currentText.trim()) {
+                trackChatbotTelemetry({
+                    event_type: 'client_stream_missing_done',
+                    session_id: sessionId,
+                    message_id: aiMessageId,
+                });
                 const safeText = currentText.trim().replace(/[,:;\-–—\s]+$/u, '');
                 setMessages(prev => prev.map(m => (m.sender_type === 'AI' && m.id === aiMessageId)
                     ? { ...m, message_content: `${safeText}\n\n(Bạn muốn mình tiếp tục phần còn lại không?)` }
@@ -230,11 +318,13 @@ const Chatbot: React.FC = () => {
         if (messages.length === 0 && sessions.length > 0 && currentSessionId !== null) {
             // Already empty, just switch to null
             setCurrentSessionId(null);
+            setGuestSessionToken(null);
             setMessages([]);
             return;
         }
 
         setCurrentSessionId(null);
+        setGuestSessionToken(null);
         setMessages([]);
     };
 
@@ -422,7 +512,21 @@ const Chatbot: React.FC = () => {
                                                                     src={imageUrl}
                                                                     alt={alt}
                                                                     className="w-full max-w-md object-cover hover:scale-105 transition-transform duration-700 cursor-zoom-in"
-                                                                    onError={(e) => (e.currentTarget.parentElement!.style.display = 'none')}
+                                                                    onLoad={() => trackChatbotTelemetry({
+                                                                        event_type: 'client_image_loaded',
+                                                                        session_id: msg.session_id,
+                                                                        message_id: msg.id,
+                                                                        image_url: imageUrl,
+                                                                    })}
+                                                                    onError={(e) => {
+                                                                        trackChatbotTelemetry({
+                                                                            event_type: 'client_image_error',
+                                                                            session_id: msg.session_id,
+                                                                            message_id: msg.id,
+                                                                            image_url: imageUrl,
+                                                                        });
+                                                                        e.currentTarget.parentElement!.style.display = 'none';
+                                                                    }}
                                                                 />
                                                             </motion.div>
                                                         );

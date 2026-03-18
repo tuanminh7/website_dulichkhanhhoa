@@ -87,6 +87,8 @@ export interface ChatSession {
     user_id?: string;
     title?: string;
     started_at: string;
+    updated_at?: string;
+    guest_token?: string;
 }
 
 export interface ChatMessage {
@@ -153,4 +155,3 @@ export interface Like {
     user_id: string;
     created_at: string;
 }
-
