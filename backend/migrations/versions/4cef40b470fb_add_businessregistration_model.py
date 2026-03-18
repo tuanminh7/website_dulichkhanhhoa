@@ -37,8 +37,8 @@ def upgrade():
             sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status').create(bind)
 
     # Re-define business_types and registration_status for use in op.create_table
-    business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types')
-    registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status')
+    business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types', create_type=False)
+    registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status', create_type=False)
 
     # Add foreign key to post_comments with a name
     with op.batch_alter_table('post_comments', schema=None) as batch_op:
