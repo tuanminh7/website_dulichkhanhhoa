@@ -72,7 +72,7 @@ def build_db_knowledge_text() -> str:
                 if not primary_img:
                     primary_img = loc.images.first()
                 if primary_img and primary_img.image_url:
-                    parts.append(f"Ảnh đại diện: {primary_img.image_url}")
+                    parts.append(f"Ảnh đại diện: /api/ai/img/loc_{loc.id}")
 
                 sections.append('\n'.join(parts))
         except Exception as e:
@@ -86,7 +86,7 @@ def build_db_knowledge_text() -> str:
                 if dish.description:
                     parts.append(f"Mô tả: {dish.description}")
                 if dish.image_url:
-                    parts.append(f"Ảnh: {dish.image_url}")
+                    parts.append(f"Ảnh: /api/ai/img/dish_{dish.id}")
                 sections.append('\n'.join(parts))
         except Exception as e:
             current_app.logger.warning(f"db_knowledge: could not load dishes: {e}")

@@ -23,6 +23,12 @@ def serve_image(slug):
         return jsonify({'error': str(e)}), 500
 
 
+@bp.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    from flask import send_from_directory
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+
 @bp.route('/chat', methods=['POST'])
 @jwt_required(optional=True)
 def chat():
