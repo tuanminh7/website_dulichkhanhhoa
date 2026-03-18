@@ -7,6 +7,7 @@ Create Date: 2026-03-15 22:30:33.877479
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -36,9 +37,13 @@ def upgrade():
         if 'registration_status' not in existing_enums:
             sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status').create(bind)
 
-    # Re-define business_types and registration_status for use in op.create_table
-    business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types', create_type=False)
-    registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status', create_type=False)
+    # Determine enum types based on dialect
+    if bind.dialect.name == 'postgresql':
+        business_types_enum = postgresql.ENUM('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types', create_type=False)
+        registration_status_enum = postgresql.ENUM('PENDING', 'APPROVED', 'REJECTED', name='registration_status', create_type=False)
+    else:
+        business_types_enum = sa.Enum('HOTEL', 'RESTAURANT', 'ATTRACTION', name='business_types')
+        registration_status_enum = sa.Enum('PENDING', 'APPROVED', 'REJECTED', name='registration_status')
 
     # Add foreign key to post_comments with a name
     with op.batch_alter_table('post_comments', schema=None) as batch_op:
