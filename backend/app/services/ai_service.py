@@ -10,10 +10,13 @@ from app.utils.chatbot_images import (
     get_chatbot_image_dir,
     normalize_chatbot_text,
 )
-
+from app.utils.db_knowledge import (
+    build_db_knowledge_text,
+    get_db_image_list_for_prompt,
+    get_db_knowledge_stats,
+)
 
 class GeminiAIService:
-    
     def __init__(self):
         self.model = None
         self.knowledge_base = ""
@@ -22,12 +25,15 @@ class GeminiAIService:
         self._rotation_lock = threading.Lock()
         self._genai_lock = threading.RLock()
         self._next_api_key_index = 0
+        # db_image_list is refreshed in _load_knowledge_base; populated after app context ready
+        self._db_image_list: List[Dict] = []
         self._load_knowledge_base()
         self._configure()
         self._load_knowledge_base()
     
     def _load_knowledge_base(self):
-        """Load custom knowledge base from data_chat.txt"""
+        """Load knowledge base: data_chat.txt (static) + DB locations/dishes (dynamic)."""
+        file_knowledge = ''
         candidates = [
             os.path.join(current_app.root_path, 'data', 'data_chat.txt'),
             os.path.join(os.path.dirname(current_app.root_path), 'app', 'data', 'data_chat.txt'),
@@ -39,12 +45,54 @@ class GeminiAIService:
             if os.path.exists(data_path):
                 try:
                     with open(data_path, 'r', encoding='utf-8') as f:
-                        self.knowledge_base = f.read()
-                    current_app.logger.info(f"Loaded knowledge base: {data_path} ({len(self.knowledge_base)} chars)")
-                    return
+                        file_knowledge = f.read()
+                    current_app.logger.info(f"Loaded data_chat.txt: {data_path} ({len(file_knowledge)} chars)")
+                    break
                 except Exception as e:
                     current_app.logger.error(f"Error reading {data_path}: {str(e)}")
-        current_app.logger.warning("data_chat.txt not found!")
+        if not file_knowledge:
+            current_app.logger.warning("data_chat.txt not found — using DB knowledge only.")
+
+        # ── DB knowledge ────────────────────────────────────────────────────
+        db_knowledge = ''
+        try:
+            db_knowledge = build_db_knowledge_text()
+        except Exception as e:
+            current_app.logger.warning(f"Could not load DB knowledge: {e}")
+
+        # Combine: file first (broad tourism content), then DB (specific venue data)
+        parts = [p for p in [file_knowledge, db_knowledge] if p]
+        self.knowledge_base = '\n\n'.join(parts)
+        self.knowledge_sections = [
+            s.strip() for s in self.knowledge_base.split('\n\n') if s.strip()
+        ]
+
+        # ── DB image list ────────────────────────────────────────────────────
+        try:
+            self._db_image_list = get_db_image_list_for_prompt(message='', max_images=100)
+            current_app.logger.info(
+                f"db_knowledge: {len(self._db_image_list)} location images loaded"
+            )
+        except Exception as e:
+            current_app.logger.warning(f"Could not load DB image list: {e}")
+            self._db_image_list = []
+
+        current_app.logger.info(
+            f"Knowledge base ready: {len(self.knowledge_base)} chars, "
+            f"{len(self.knowledge_sections)} sections, "
+            f"{len(self._db_image_list)} DB images"
+        )
+
+    def refresh_knowledge(self) -> Dict:
+        """Hot-reload knowledge from DB without restarting the server."""
+        try:
+            self._load_knowledge_base()
+            stats = get_db_knowledge_stats()
+            current_app.logger.info(f"AI knowledge refreshed: {stats}")
+            return {'success': True, 'stats': stats}
+        except Exception as e:
+            current_app.logger.error(f"refresh_knowledge error: {e}")
+            return {'success': False, 'error': str(e)}
     
     def _normalize_text(self, text: str) -> str:
         return normalize_chatbot_text(text)
@@ -101,65 +149,78 @@ class GeminiAIService:
 
         return '\n\n'.join(selected)[:max_chars]
 
-    def _get_relevant_image_markdown(self, message: str, max_images: int = 2) -> str:
-        try:
-            image_dir = get_chatbot_image_dir()
-            if image_dir is None:
-                return ''
-
+    def _get_relevant_image_list_for_prompt(self, message: str, max_images: int = 4) -> List[Dict]:
+        """
+        Return DB images relevant to *message*.
+        Falls back to filesystem images if DB has none.
+        """
+        # ── DB images (primary source) ───────────────────────────────────
+        if self._db_image_list:
             keywords = self._extract_keywords(message)
-            selected = find_relevant_chatbot_images(message, keywords=keywords, max_images=max_images)
-            if not selected:
-                return ''
+            if keywords:
+                norm_message = normalize_chatbot_text(message)
+                scored: List[tuple] = []
+                for img in self._db_image_list:
+                    norm_name = normalize_chatbot_text(img['name'])
+                    score = sum(norm_name.count(kw) for kw in keywords)
+                    if score > 0:
+                        scored.append((score, img))
+                scored.sort(key=lambda x: -x[0])
+                if scored:
+                    return [img for _, img in scored[:max_images]]
+            # No specific match — return first N
+            return self._db_image_list[:max_images]
 
+        # ── Filesystem fallback ──────────────────────────────────────────
+        try:
+            keywords = self._extract_keywords(message)
+            fs_images = find_relevant_chatbot_images(message, keywords=keywords, max_images=max_images)
+            # Convert filesystem format to unified format
+            return [
+                {'name': img['display_name'], 'image_url': f"/api/ai/img/{img['slug']}"}
+                for img in fs_images
+            ]
+        except Exception as e:
+            current_app.logger.error(f"Error listing filesystem images: {e}")
+            return []
+
+    def _get_relevant_image_markdown(self, message: str, max_images: int = 4) -> str:
+        """
+        Build markdown lines telling the AI which images it may embed.
+        Format: `![Name](url)` — Name
+        """
+        try:
+            images = self._get_relevant_image_list_for_prompt(message, max_images=max_images)
+            if not images:
+                return ''
             lines = []
-            for image in selected:
-                display_name = str(image['display_name'])
-                slug = str(image['slug'])
-                lines.append(f"- slug={slug}: `![{display_name}](/api/ai/img/{slug})` — {display_name}")
+            for img in images:
+                name = str(img['name'])
+                url = str(img['image_url'])
+                lines.append(f"- `![{name}]({url})` — {name}")
             return '\n'.join(lines)
         except Exception as e:
-            current_app.logger.error(f"Error listing filtered images: {str(e)}")
+            current_app.logger.error(f"Error building image markdown: {e}")
             return ''
 
     def _build_image_gallery_markdown(self, source_text: str, max_images: int = 2) -> str:
+        """
+        After AI response is generated: if it doesn't already contain images,
+        try to append relevant ones from DB (or filesystem fallback).
+        """
         try:
             if not source_text or '![' in source_text:
                 return ''
 
-            selected = self._select_response_images(source_text, max_images=max_images)
-            if not selected:
+            images = self._get_relevant_image_list_for_prompt(source_text, max_images=max_images)
+            if not images:
                 return ''
 
-            lines = []
-            for image in selected:
-                display_name = str(image['display_name'])
-                slug = str(image['slug'])
-                lines.append(f"![{display_name}](/api/ai/img/{slug})")
+            lines = [f"![{img['name']}]({img['image_url']})" for img in images]
             return '\n\nẢnh minh họa:\n\n' + '\n\n'.join(lines)
         except Exception as e:
-            current_app.logger.error(f"Error building image gallery: {str(e)}")
+            current_app.logger.error(f"Error building image gallery: {e}")
             return ''
-
-    def _select_response_images(self, source_text: str, max_images: int = 2) -> List[Dict[str, object]]:
-        selected = []
-        seen_slugs = set()
-
-        def extend(images: List[Dict[str, object]]):
-            for image in images:
-                slug = str(image['slug'])
-                if slug in seen_slugs:
-                    continue
-                selected.append(image)
-                seen_slugs.add(slug)
-                if len(selected) >= max_images:
-                    return True
-            return False
-
-        if extend(find_explicit_chatbot_images(source_text, max_images=max_images)):
-            return selected
-        extend(find_relevant_chatbot_images(source_text, max_images=max_images))
-        return selected
 
     def append_relevant_images(self, response_text: str, source_text: str, max_images: int = 2) -> str:
         if not response_text:
@@ -332,9 +393,9 @@ class GeminiAIService:
                 'response': 'Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau.'
             }
     
-    def _get_system_instruction(self, context: Optional[Dict] = None) -> str:
+    def _get_system_instruction(self, message: str = '', context: Optional[Dict] = None) -> str:
         """Build system instruction"""
-        system = self._build_tourism_system_prompt()
+        system = self._build_tourism_system_prompt(message)
         if context:
             system += f"\n\nThông tin bổ sung về người dùng:\n{json.dumps(context, ensure_ascii=False, indent=2)}"
         return system
@@ -542,61 +603,14 @@ class GeminiAIService:
             }
     
     def _build_tourism_system_prompt(self, message: str = '') -> str:
-        """Build system prompt for tourism assistant"""
-        # Danh sách ảnh cứng theo tên file thực tế (sorted alphabetically = ID thứ tự)
-        KNOWN_IMAGES = [
-            "Bãi Hỏm - Nơi rùa biển về đẻ trứng",
-            "Bãi Tràng - Thiên đường cắm trại",
-            "Bãi biển Bình Tiên",
-            "Bánh căn",
-            "Bảo tàng Ninh Thuận - Dấu ấn kiến trúc độc đáo",
-            "Biển Cà Ná",
-            "Bún sứa",
-            "Cánh đồng điện gió Đầm Nại - Biểu tượng năng lượng sạch",
-            "Chùa Từ Vân",
-            "Du lịch Bình Hưng khanh hoa",
-            "Du lịch Bình Lập",
-            "Du lịch Bình Tiên",
-            "Du lịch Vinpearl - Hòn Tre",
-            "Hang Rái",
-            "Hòn Chồng - Hòn Vợ Nha Trang",
-            "Hòn Nội - Đảo Yến Nha Trang",
-            "Hòn Đỏ - Thiên đường san hô dưới lòng biển",
-            "Khu du lịch Suối Hoa Lan",
-            "Làng Gốm Bàu Trúc",
-            "Làng nho Thái An - Thủ phủ nho",
-            "Mũi Đá Vách",
-            "Mũi Đôi (mũi Điện) - Điểm Cực Đông đất liền của Tổ quốc",
-            "Nhà Thờ Núi",
-            "Núi Đá Chồng (Núi Phụng Hoàng)",
-            "Rừng thông Khánh Sơn",
-            "Thành cổ Diên Khánh",
-            "Thác Chapơr",
-            "Thác Tà Gụ",
-            "Tháp Bà Ponagar",
-            "Tháp Po Klong Garai",
-            "Trùng Sơn Cổ Tự - Ngôi chùa trên đỉnh núi Đá Chồng",
-            "Trải nghiệm nét đẹp văn hóa của đồng bào Raglai",
-            "Viện Hải Dương Học Nha Trang",
-            "Vườn nho Ba Mọi - Trải nghiệm văn hóa nho Ninh Thuận",
-            "Vườn quốc gia Núi Chúa - Rừng khô hạn châu Phi của Việt Nam",
-            "Vườn quốc gia Phước Bình",
-            "Vịnh Vân Phong",
-            "Vịnh Vĩnh Hy",
-            "Điệp Sơn",
-            "Đèo Ngoạn Mục",
-            "Đảo Robinson",
-            "Đầm Nại",
-            "Đồi cát Nam Cương",
-            "Đồng Cừu Ysa Núi Hòn Vàng Krong Pha",
-            "bãi biển dốc lết nha trang",
-        ]
-
+        """Build system prompt for tourism assistant (all image data loaded from DB)."""
+        # ── Dynamic image list from DB ────────────────────────────────────
+        image_list_str = self._get_relevant_image_markdown(message)
         image_rules = "- Không chèn hình ảnh nếu không thực sự cần.\n- Tối đa 2 hình trong một câu trả lời.\n"
         if image_list_str:
             image_rules += "- Khi người dùng hỏi về một địa điểm cụ thể và có ảnh khớp, hãy luôn chèn ít nhất 1 ảnh minh họa đúng địa điểm đó ở cuối câu trả lời.\n"
             image_rules += "- Nếu bạn gợi ý nhiều địa điểm, ưu tiên ảnh của địa điểm quan trọng nhất hoặc địa điểm người dùng hỏi trực tiếp.\n"
-            image_rules += "- Nếu dùng ảnh, chỉ được dùng CHÍNH XÁC các mã Markdown sau:\n" + image_list_str
+            image_rules += "- Nếu dùng ảnh, chỉ được dùng CHÍNH XÁC cú pháp Markdown sau (KHÔNG tự bịa URL):\n" + image_list_str
         else:
             image_rules += "- Hiện tại không có ảnh phù hợp rõ ràng với câu hỏi, nên ưu tiên trả lời bằng chữ.\n"
 

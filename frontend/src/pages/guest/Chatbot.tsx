@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { chatService } from '../../services/api';
 import type { ChatMessage, ChatSession } from '../../types';
-import { Bot, User, Send, Plus, History, Calculator, LogIn } from 'lucide-react';
+import { Bot, User, Send, Plus, History, Calculator, LogIn, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
@@ -12,6 +12,7 @@ const Chatbot: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
     const [showLimitModal, setShowLimitModal] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isFetching = useRef(false);
@@ -97,7 +98,7 @@ const Chatbot: React.FC = () => {
         setIsTyping(true);
 
         let sessionId = currentSessionId;
-        
+
         try {
             // Lazy create session if it's new
             if (sessionId === null) {
@@ -234,7 +235,7 @@ const Chatbot: React.FC = () => {
         if (currentSessionId === null && messages.length === 0) {
             return;
         }
-        
+
         // If current session is empty but has an ID, we can still "reset" to a new unsaved session
         // but typically the user wants a new one only if the current one has content.
         if (messages.length === 0 && sessions.length > 0 && currentSessionId !== null) {
@@ -246,6 +247,28 @@ const Chatbot: React.FC = () => {
 
         setCurrentSessionId(null);
         setMessages([]);
+    };
+
+    const handleDeleteSession = async (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (deletingSessionId) return;
+
+        if (window.confirm('Bạn có chắc chắn muốn xóa đoạn chat này không?')) {
+            try {
+                setDeletingSessionId(id);
+                await chatService.deleteSession(id);
+                setSessions(prev => prev.filter(s => s.id !== id));
+                if (currentSessionId === id) {
+                    setCurrentSessionId(null);
+                    setMessages([]);
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                alert('Có lỗi xảy ra khi xóa đoạn chat.');
+            } finally {
+                setDeletingSessionId(null);
+            }
+        }
     };
 
     return (
@@ -261,8 +284,8 @@ const Chatbot: React.FC = () => {
                         <button
                             onClick={() => createNewSession()}
                             disabled={currentSessionId === null}
-                            className={`p-2.5 rounded-xl transition-all duration-300 shadow-sm ${currentSessionId === null 
-                                ? 'text-slate-300 cursor-not-allowed bg-slate-50 border-slate-100' 
+                            className={`p-2.5 rounded-xl transition-all duration-300 shadow-sm ${currentSessionId === null
+                                ? 'text-slate-300 cursor-not-allowed bg-slate-50 border-slate-100'
                                 : 'hover:bg-blue-600 hover:text-white text-blue-600 shadow-sm hover:shadow-blue-200'}`}
                             title={currentSessionId === null ? "Đang ở đoạn chat mới" : "Đoạn chat mới"}
                         >
@@ -279,11 +302,28 @@ const Chatbot: React.FC = () => {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setCurrentSessionId(s.id)}
-                                    className={`w-full text-left p-4 rounded-2xl transition-all duration-300 border ${currentSessionId === s.id
+                                    className={`w-full text-left p-4 rounded-2xl transition-all duration-300 border relative group ${currentSessionId === s.id
                                         ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 font-medium'
                                         : 'bg-white border-transparent hover:border-blue-100 hover:bg-blue-50/50 text-slate-600 shadow-sm'}`}
                                 >
-                                    <p className="truncate text-sm pr-2">{s.title || 'Đoạn chat không tên'}</p>
+                                    <div className="flex justify-between items-start">
+                                        <p className="truncate text-sm pr-6 grow">{s.title || 'Đoạn chat không tên'}</p>
+                                        <button
+                                            onClick={(e) => handleDeleteSession(s.id, e)}
+                                            disabled={deletingSessionId === s.id}
+                                            className={`absolute top-3.5 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all ${currentSessionId === s.id
+                                                    ? 'text-white/80 hover:text-white hover:bg-blue-700'
+                                                    : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
+                                                } ${deletingSessionId === s.id ? 'opacity-100 cursor-not-allowed' : ''}`}
+                                            title="Xóa đoạn chat"
+                                        >
+                                            {deletingSessionId === s.id ? (
+                                                <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                                            ) : (
+                                                <Trash2 className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    </div>
                                     <div className="flex items-center mt-2 opacity-70 text-[10px]">
                                         <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${currentSessionId === s.id ? 'bg-white' : 'bg-blue-400'}`} />
                                         {new Date(s.started_at).toLocaleDateString('vi-VN')}
@@ -315,7 +355,7 @@ const Chatbot: React.FC = () => {
                                     Đăng nhập ngay
                                 </button>
                             </div>
-                            
+
                             <div className="text-center px-4">
                                 <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Hoặc bạn có thể</p>
                                 <button
@@ -495,17 +535,17 @@ const Chatbot: React.FC = () => {
                                 >
                                     {isTyping ? (
                                         <div className="flex gap-1">
-                                            <motion.span 
+                                            <motion.span
                                                 animate={{ y: [0, -5, 0] }}
                                                 transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
                                                 className="w-1.5 h-1.5 bg-white rounded-full"
                                             />
-                                            <motion.span 
+                                            <motion.span
                                                 animate={{ y: [0, -5, 0] }}
                                                 transition={{ duration: 0.5, repeat: Infinity, delay: 0.1 }}
                                                 className="w-1.5 h-1.5 bg-white rounded-full"
                                             />
-                                            <motion.span 
+                                            <motion.span
                                                 animate={{ y: [0, -5, 0] }}
                                                 transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
                                                 className="w-1.5 h-1.5 bg-white rounded-full"
@@ -541,16 +581,16 @@ const Chatbot: React.FC = () => {
                             className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
                         >
                             <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-blue-600 to-indigo-600" />
-                            
+
                             <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 transform rotate-12">
                                 <Bot className="w-10 h-10 text-blue-600" />
                             </div>
-                            
+
                             <h3 className="text-2xl font-black text-slate-900 text-center mb-4 tracking-tight">Hết lượt chat thử!</h3>
                             <p className="text-slate-500 text-center mb-8 leading-relaxed">
                                 Bạn đã trải nghiệm 3 câu hỏi miễn phí. Để tiếp tục trò chuyện và lưu lại lịch sử tư vấn, hãy đăng nhập ngay nhé!
                             </p>
-                            
+
                             <div className="space-y-3">
                                 <button
                                     onClick={() => navigate('/login')}

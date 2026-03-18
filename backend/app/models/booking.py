@@ -27,6 +27,10 @@ class Booking(db.Model):
         nullable=False
     )
 
+    # Customer info explicitly provided during booking
+    customer_name = db.Column(db.String(100), nullable=False, server_default='')
+    customer_phone = db.Column(db.String(20), nullable=False, server_default='')
+
     # Type of service being booked
     service_type = db.Column(
         db.Enum('ROOM', 'TABLE', 'SEAT', name='booking_service_types'),
@@ -63,6 +67,8 @@ class Booking(db.Model):
             'id': self.id,
             'business_registration_id': self.business_registration_id,
             'customer_user_id': self.customer_user_id,
+            'customer_name': self.customer_name,
+            'customer_phone': self.customer_phone,
             'service_type': self.service_type,
             'booking_date': self.booking_date.isoformat() if self.booking_date else None,
             'time_slot': self.time_slot,

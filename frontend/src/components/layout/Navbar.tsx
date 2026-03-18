@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
 
     const navLinks = [
         { name: 'DU LỊCH', path: '/locations' },
+        { name: 'Doanh nghiệp', path: '/businesses' },
         { name: 'Tin tức', path: '/news' },
         { name: 'Tư vấn AI', path: '/chatbot' },
         ...(isBusiness ? [{ name: 'Quản lý', path: '/business' }] : [{ name: 'Hợp tác', path: '/register-business' }]),
