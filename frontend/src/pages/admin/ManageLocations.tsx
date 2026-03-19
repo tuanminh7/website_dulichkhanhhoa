@@ -24,6 +24,8 @@ const ManageLocations: React.FC = () => {
         address: '',
         category_id: '',
         price: '',
+        price_range_min: '',
+        price_range_max: '',
         status: 'ACTIVE'
     });
 
@@ -83,6 +85,8 @@ const ManageLocations: React.FC = () => {
                 address: loc.address || '',
                 category_id: loc.category_id?.toString() || '',
                 price: loc.price?.toString() || '',
+                price_range_min: loc.price_range_min?.toString() || '',
+                price_range_max: loc.price_range_max?.toString() || '',
                 status: loc.status || 'ACTIVE'
             });
             try {
@@ -100,6 +104,8 @@ const ManageLocations: React.FC = () => {
                 address: '',
                 category_id: categories[0]?.id.toString() || '',
                 price: '',
+                price_range_min: '',
+                price_range_max: '',
                 status: 'ACTIVE'
             });
             setExistingImages([]);

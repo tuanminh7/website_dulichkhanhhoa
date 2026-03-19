@@ -66,9 +66,18 @@ const LocationTable: React.FC<LocationTableProps> = ({ locations, loading, onEdi
                                         </span>
                                     </td>
                                     <td className="py-6">
-                                        <span className="font-bold text-gray-900">
-                                            {loc.price ? `${loc.price.toLocaleString('vi-VN')} đ` : '-'}
-                                        </span>
+                                        {(loc.price_range_min || loc.price_range_max) ? (
+                                            <div>
+                                                <span className="font-bold text-gray-900 text-[13px] block">
+                                                    {loc.price_range_min ? `${loc.price_range_min.toLocaleString('vi-VN')} đ` : '0 đ'} - {loc.price_range_max ? `${loc.price_range_max.toLocaleString('vi-VN')} đ` : '...'}
+                                                </span>
+                                                {loc.price && <span className="text-[10px] text-gray-400 block font-medium mt-0.5">Cố định: {loc.price.toLocaleString('vi-VN')} đ</span>}
+                                            </div>
+                                        ) : (
+                                            <span className="font-bold text-gray-900">
+                                                {loc.price ? `${loc.price.toLocaleString('vi-VN')} đ` : '-'}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="py-6">
                                         <div className="flex -space-x-2">

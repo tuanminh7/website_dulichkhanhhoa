@@ -89,10 +89,13 @@ def chat():
             db.session.add(chat_session)
             db.session.commit()
         
-        # Get history
-        history_msgs = ChatMessage.query.filter_by(session_id=chat_session.id).order_by(ChatMessage.created_at.asc()).all()
+        # Get history (Optimized: only load the last 10 messages from DB)
+        history_msgs = ChatMessage.query.filter_by(session_id=chat_session.id)\
+            .order_by(ChatMessage.created_at.desc()).limit(10).all()
+        history_msgs.reverse()
+        
         chat_history = []
-        for h in history_msgs[-10:]:
+        for h in history_msgs:
             chat_history.append({
                 'role': 'user' if h.sender_type == 'USER' else 'assistant',
                 'content': h.message_content
@@ -118,20 +121,6 @@ def chat():
                 for chunk in ai_service.chat_stream(message, context=context, chat_history=chat_history):
                     full_response += chunk
                     yield f"data: {json.dumps({'text': chunk})}\n\n"
-
-            full_response_with_images = ai_service.append_relevant_images(
-                full_response,
-                f"{message}\n{full_response}",
-            )
-            if full_response_with_images != full_response:
-                appended_chunk = full_response_with_images[len(full_response):]
-                if appended_chunk:
-                    current_app.logger.info(
-                        'Appended chatbot images to response',
-                        extra={'session_id': chat_session.id, 'message': message[:80]}
-                    )
-                    yield f"data: {json.dumps({'text': appended_chunk})}\n\n"
-                full_response = full_response_with_images
 
             should_cache_response = full_response and not full_response.lstrip().startswith('Xin lỗi, đã có lỗi:')
             if should_cache_response:
@@ -423,9 +412,9 @@ def get_knowledge_stats():
         ai_service = get_ai_service()
         db_stats = get_db_knowledge_stats()
         return jsonify({
-            'knowledge_base_chars': len(ai_service.knowledge_base),
-            'knowledge_sections': len(ai_service.knowledge_sections),
-            'db_images_loaded': len(ai_service._db_image_list),
+            'knowledge_base_chars': len(ai_service.km.knowledge_base),
+            'knowledge_sections': len(ai_service.km.knowledge_sections),
+            'db_images_loaded': len(ai_service.km._db_image_list),
             'db_stats': db_stats,
         }), 200
     except Exception as e:

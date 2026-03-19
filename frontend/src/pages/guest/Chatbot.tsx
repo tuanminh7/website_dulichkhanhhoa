@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { chatService } from '../../services/api';
 import type { ChatMessage, ChatSession } from '../../types';
-import { Bot, Calculator, History } from 'lucide-react';
+import { Bot, History, X, PanelLeftOpen } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Extracted Components
 import ChatSidebar from '../../features/chat/ChatSidebar';
@@ -19,6 +20,7 @@ const Chatbot: React.FC = () => {
     const [isTyping, setIsTyping] = useState(false);
     const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
     const [showLimitModal, setShowLimitModal] = useState(false);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isFetching = useRef(false);
     const isCreating = useRef(false);
@@ -262,63 +264,122 @@ const Chatbot: React.FC = () => {
     };
 
     return (
-        <div className="pt-20 h-screen bg-[#f8fafc] flex flex-col md:flex-row overflow-hidden font-sans">
-            <ChatSidebar
-                user={user}
-                sessions={sessions}
-                currentSessionId={currentSessionId}
-                deletingSessionId={deletingSessionId}
-                onSessionSelect={setCurrentSessionId}
-                onCreateSession={createNewSession}
-                onDeleteSession={handleDeleteSession}
-                onLoginClick={() => navigate('/login')}
-                onRegisterClick={() => navigate('/register')}
-            />
+        <div className="pt-20 h-screen flex flex-col overflow-hidden font-sans" style={{ background: '#f1f5fb' }}>
+            <div className="flex flex-1 overflow-hidden">
+                {/* Desktop sidebar */}
+                <ChatSidebar
+                    user={user}
+                    sessions={sessions}
+                    currentSessionId={currentSessionId}
+                    deletingSessionId={deletingSessionId}
+                    onSessionSelect={(id) => { setCurrentSessionId(id); setMobileSidebarOpen(false); }}
+                    onCreateSession={() => { createNewSession(); setMobileSidebarOpen(false); }}
+                    onDeleteSession={handleDeleteSession}
+                    onLoginClick={() => navigate('/login')}
+                    onRegisterClick={() => navigate('/register')}
+                />
 
-            <div className="grow flex flex-col h-full relative bg-transparent">
-                {/* Chat Header */}
-                <div className="bg-white/70 backdrop-blur-md p-5 border-b border-slate-200/60 flex justify-between items-center shadow-[0_1px_10px_rgba(0,0,0,0.02)] z-10">
-                    <div className="flex items-center">
-                        <div className="relative">
-                            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-600 to-teal-500 flex items-center justify-center text-white mr-4 shadow-xl shadow-blue-500/20 transform hover:rotate-12 transition-transform cursor-pointer">
-                                <Bot className="w-7 h-7" />
+                {/* Mobile sidebar overlay */}
+                <AnimatePresence>
+                    {mobileSidebarOpen && (
+                        <>
+                            <motion.div
+                                key="overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden"
+                                onClick={() => setMobileSidebarOpen(false)}
+                            />
+                            <motion.div
+                                key="mobile-sidebar"
+                                initial={{ x: '-100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '-100%' }}
+                                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                                className="fixed left-0 top-0 bottom-0 z-50 w-72 md:hidden flex flex-col bg-white shadow-2xl pt-16"
+                            >
+                                <button
+                                    onClick={() => setMobileSidebarOpen(false)}
+                                    className="absolute top-4 right-4 p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                {/* Reuse sidebar content inline for mobile */}
+                                <div className="flex flex-col h-full overflow-hidden">
+                                    <ChatSidebar
+                                        user={user}
+                                        sessions={sessions}
+                                        currentSessionId={currentSessionId}
+                                        deletingSessionId={deletingSessionId}
+                                        onSessionSelect={(id) => { setCurrentSessionId(id); setMobileSidebarOpen(false); }}
+                                        onCreateSession={() => { createNewSession(); setMobileSidebarOpen(false); }}
+                                        onDeleteSession={handleDeleteSession}
+                                        onLoginClick={() => { navigate('/login'); setMobileSidebarOpen(false); }}
+                                        onRegisterClick={() => { navigate('/register'); setMobileSidebarOpen(false); }}
+                                    />
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                {/* Main chat area */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    {/* Chat header */}
+                    <div className="bg-white/90 backdrop-blur-xl border-b border-slate-200/70 px-4 md:px-8 py-4 flex items-center justify-between shadow-sm z-10">
+                        <div className="flex items-center gap-3">
+                            {/* Mobile sidebar toggle */}
+                            <button
+                                onClick={() => setMobileSidebarOpen(true)}
+                                className="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                            >
+                                <PanelLeftOpen className="w-5 h-5" />
+                            </button>
+
+                            <div className="relative">
+                                <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
+                                    <Bot className="w-5 h-5" />
+                                </div>
+                                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
-                        </div>
-                        <div>
-                            <h3 className="font-extrabold text-slate-800 text-lg tracking-tight">AI Tourism Scout</h3>
-                            <div className="flex items-center">
-                                <span className="flex h-2 w-2 relative mr-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-widest">Đang trực tuyến</p>
+
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-[15px] leading-tight">AI Tourism Scout</h3>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                                    </span>
+                                    <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Đang trực tuyến</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="flex gap-2.5">
-                        <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Ước tính chi phí">
-                            <Calculator className="w-5.5 h-5.5" />
+
+                        {/* Right action: show history on mobile */}
+                        <button
+                            onClick={() => setMobileSidebarOpen(true)}
+                            className="md:hidden p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            title="Lịch sử"
+                        >
+                            <History className="w-5 h-5" />
                         </button>
-                        <button className="p-2.5 text-slate-400 hover:text-slate-800 rounded-xl transition-all md:hidden" title="Lịch sử">
-                            <History className="w-5.5 h-5.5" />
-                        </button>
                     </div>
+
+                    <MessageList
+                        messages={messages}
+                        isTyping={isTyping}
+                        messagesEndRef={messagesEndRef}
+                        onSuggestionClick={setInput}
+                    />
+
+                    <ChatInput
+                        input={input}
+                        setInput={setInput}
+                        isTyping={isTyping}
+                        onSendMessage={handleSendMessage}
+                    />
                 </div>
-
-                <MessageList
-                    messages={messages}
-                    isTyping={isTyping}
-                    messagesEndRef={messagesEndRef}
-                    onSuggestionClick={setInput}
-                />
-
-                <ChatInput
-                    input={input}
-                    setInput={setInput}
-                    isTyping={isTyping}
-                    onSendMessage={handleSendMessage}
-                />
             </div>
 
             <GuestLimitModal
@@ -333,6 +394,11 @@ const Chatbot: React.FC = () => {
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                @keyframes shimmer {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+                .animate-shimmer { animation: shimmer 1.5s infinite linear; }
             `}} />
         </div>
     );

@@ -102,14 +102,37 @@ const LocationFormModal: React.FC<LocationFormModalProps> = ({
                         />
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-xs font-black uppercase text-gray-400 tracking-widest mb-2">Giá Ít Nhất (VND)</label>
+                            <input
+                                type="number"
+                                className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                                value={formData.price_range_min}
+                                onChange={e => setFormData({ ...formData, price_range_min: e.target.value })}
+                                placeholder="VD: 50000"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-black uppercase text-gray-400 tracking-widest mb-2">Giá Tối Đa (VND)</label>
+                            <input
+                                type="number"
+                                className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                                value={formData.price_range_max}
+                                onChange={e => setFormData({ ...formData, price_range_max: e.target.value })}
+                                placeholder="VD: 200000"
+                            />
+                        </div>
+                    </div>
+
                     <div>
-                        <label className="block text-xs font-black uppercase text-gray-400 tracking-widest mb-2">Giá tiền (VND) - Cho Tour</label>
+                        <label className="block text-xs font-black uppercase text-gray-400 tracking-widest mb-2">Giá Cố Định (VND) - Nếu có</label>
                         <input
                             type="number"
                             className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold"
                             value={formData.price}
                             onChange={e => setFormData({ ...formData, price: e.target.value })}
-                            placeholder="Nhập giá tiền nếu là tour..."
+                            placeholder="Nhập giá cố định..."
                         />
                     </div>
 
