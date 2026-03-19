@@ -31,7 +31,7 @@ def save_uploaded_file(file, folder='uploads'):
     file.save(filepath)
     
     # Return relative path
-    return f"/static/uploads/{folder}/{unique_filename}"
+    return f"/uploads/{folder}/{unique_filename}"
 
 
 def format_currency(amount, currency='VND'):
