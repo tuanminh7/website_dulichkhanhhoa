@@ -11,7 +11,8 @@ const Locations: React.FC = () => {
     const [locations, setLocations] = useState<Location[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
     const [loading, setLoading] = useState(true);
     const currentPage = parseInt(searchParams.get('page') || '1');
     const [totalPages, setTotalPages] = useState(1);
@@ -28,6 +29,33 @@ const Locations: React.FC = () => {
     };
 
     useEffect(() => {
+        const queryTerm = searchParams.get('search') || '';
+        if (queryTerm !== searchTerm) {
+            setSearchTerm(queryTerm);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        const newParams = new URLSearchParams(searchParams);
+        if (debouncedSearchTerm) {
+            newParams.set('search', debouncedSearchTerm);
+        } else {
+            newParams.delete('search');
+        }
+        
+        if (newParams.get('search') !== (searchParams.get('search') || '')) {
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [debouncedSearchTerm]);
+
+    useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
@@ -37,7 +65,7 @@ const Locations: React.FC = () => {
                         page: currentPage,
                         per_page: itemsPerPage,
                         category: selectedCategory ? categories.find(c => c.id === selectedCategory)?.type : undefined,
-                        search: searchTerm || undefined
+                        search: debouncedSearchTerm || undefined
                     }),
                     categoryService.getAll()
                 ]);
@@ -53,7 +81,7 @@ const Locations: React.FC = () => {
             }
         };
         fetchData();
-    }, [currentPage, selectedCategory, searchTerm]);
+    }, [currentPage, selectedCategory, debouncedSearchTerm]);
 
     // useEffect(() => {
     //     if (searchParams.get('page')) {

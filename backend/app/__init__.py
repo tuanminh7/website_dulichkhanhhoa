@@ -184,9 +184,27 @@ def ensure_schema_compatibility():
                     print(f"Failed to drop column: {e}")
 
         if engine.name == 'postgresql':
-            type_exists = connection.execute(text("SELECT 1 FROM pg_type WHERE typname = 'sender_types'")).scalar()
-            if type_exists:
-                connection.execute(text("ALTER TYPE sender_types ADD VALUE IF NOT EXISTS 'AI'"))
+            # ── Ensure ENUM values exist (ALTER TYPE ADD VALUE cannot run in transaction) ──
+            enums_to_check = {
+                'user_roles': ['GUEST', 'USER', 'BUSINESS', 'ADMIN'],
+                'business_types': ['HOTEL', 'RESTAURANT', 'ATTRACTION'],
+                'registration_status': ['PENDING', 'APPROVED', 'REJECTED'],
+                'sender_types': ['USER', 'AI']
+            }
+            
+            with engine.connect() as connection:
+                # Set isolation level to AUTOCOMMIT for ALTER TYPE
+                connection.execution_options(isolation_level="AUTOCOMMIT")
+                for enum_name, values in enums_to_check.items():
+                    type_exists = connection.execute(text(f"SELECT 1 FROM pg_type WHERE typname = '{enum_name}'")).scalar()
+                    if type_exists:
+                        for value in values:
+                            try:
+                                connection.execute(text(f"ALTER TYPE {enum_name} ADD VALUE IF NOT EXISTS '{value}'"))
+                            except Exception as e:
+                                # Values might already exist but were created in a way that IF NOT EXISTS fails
+                                # or other concurrent access issues. We log and continue.
+                                print(f"Warning: Could not add value {value} to enum {enum_name}: {e}")
 
 def create_app(config_name=None):
     if config_name is None:

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin, Search } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TextType from '../ui/TextType';
 import SplitText from '../ui/SplitText';
 import BlurText from '../ui/BlurText';
@@ -8,6 +9,17 @@ import BlurText from '../ui/BlurText';
 import banner4 from '../../assets/image/banner-4.jpg';
 
 const Hero: React.FC = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const navigate = useNavigate();
+
+    const handleSearch = () => {
+        if (searchTerm.trim()) {
+            navigate(`/locations?search=${encodeURIComponent(searchTerm.trim())}`);
+        } else {
+            navigate('/locations');
+        }
+    };
+
     return (
         <div className="relative h-[120vh] w-full overflow-hidden">
             {/* Background Image with Overlay */}
@@ -79,10 +91,20 @@ const Hero: React.FC = () => {
                                 <input
                                     type="text"
                                     placeholder="Bạn muốn đi đâu ở Khánh Hoà?"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSearch();
+                                        }
+                                    }}
                                     className="w-full bg-white/5 text-white placeholder-gray-400 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-lg"
                                 />
                             </div>
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 active:scale-95 flex items-center justify-center whitespace-nowrap">
+                            <button 
+                                onClick={handleSearch}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 active:scale-95 flex items-center justify-center whitespace-nowrap"
+                            >
                                 Tìm kiếm ngay
                             </button>
                         </div>
