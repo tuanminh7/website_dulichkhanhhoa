@@ -43,6 +43,7 @@ export interface Location {
     address?: string;
     price_range_min?: number;
     price_range_max?: number;
+    price?: number;
     rating_avg: number;
     status: 'ACTIVE' | 'INACTIVE';
     latitude: number;

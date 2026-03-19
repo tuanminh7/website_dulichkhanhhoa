@@ -154,6 +154,11 @@ def ensure_schema_compatibility():
                 connection.execute(text('ALTER TABLE saved_itineraries ADD COLUMN updated_at TIMESTAMP'))
                 connection.execute(text('UPDATE saved_itineraries SET updated_at = created_at WHERE updated_at IS NULL'))
 
+        if 'locations' in table_names:
+            location_columns = {column['name'] for column in inspect(engine).get_columns('locations')}
+            if 'price' not in location_columns:
+                connection.execute(text('ALTER TABLE locations ADD COLUMN price FLOAT'))
+
         if 'business_registrations' in table_names:
             business_columns = {column['name'] for column in inspect(engine).get_columns('business_registrations')}
             

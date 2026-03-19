@@ -162,7 +162,11 @@ const Locations: React.FC = () => {
                                                 </div>
                                                 <div className="flex justify-between items-center pt-6 border-t border-gray-50">
                                                     <div className="text-gray-900 font-bold">
-                                                        {loc.price_range_min ? `${loc.price_range_min.toLocaleString()}đ+` : 'Miễn phí'}
+                                                        {loc.price 
+                                                            ? `${loc.price.toLocaleString('vi-VN')} đ` 
+                                                            : loc.price_range_min 
+                                                                ? `${loc.price_range_min.toLocaleString('vi-VN')} đ+` 
+                                                                : 'Miễn phí'}
                                                     </div>
                                                     <span className="text-blue-600 font-semibold inline-flex items-center group-hover:gap-2 transition-all cursor-pointer">
                                                         Xem chi tiết <ArrowRight className="w-4 h-4 ml-1" />

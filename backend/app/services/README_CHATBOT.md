@@ -36,7 +36,7 @@ Luồng end-to-end hiện tại:
    - tri thức lấy từ `data_chat.txt`
    - ảnh phù hợp với từ khóa
    - `user_preferences` nếu đã đăng nhập
-8. `GeminiAIService` gọi Gemini ở chế độ chat nhiều lượt với history.
+8. `GeminiAIService` gọi Gemini ở chế độ chat nhiều lượt với history. (Hiện được tổ chức theo package `app/services/ai/`)
 9. Backend stream dần từng chunk về frontend.
 10. Khi kết thúc, backend lưu:
    - 1 bản ghi `ChatMessage` của người dùng

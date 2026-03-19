@@ -3,7 +3,7 @@ import json
 
 from flask import Blueprint, request, jsonify, session, Response, stream_with_context, send_file, current_app
 from flask_jwt_extended import jwt_required, current_user
-from app.services.ai_service import get_ai_service
+from app.services.ai import get_ai_service
 from app.services.itinerary_service import get_itinerary_service
 from app.utils.chatbot_images import resolve_chatbot_image
 from app.utils.db_knowledge import get_db_knowledge_stats

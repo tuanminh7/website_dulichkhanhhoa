@@ -33,6 +33,7 @@ class Location(db.Model):
     address = db.Column(db.String(300))
     price_range_min = db.Column(db.Float)
     price_range_max = db.Column(db.Float)
+    price = db.Column(db.Float)
     rating_avg = db.Column(db.Float, default=0.0)
     status = db.Column(db.Enum('ACTIVE', 'INACTIVE', name='location_status'), default='ACTIVE')
     path = db.Column(db.JSON)
@@ -95,6 +96,7 @@ class Location(db.Model):
             'address': self.address,
             'price_range_min': self.price_range_min,
             'price_range_max': self.price_range_max,
+            'price': self.price,
             'rating_avg': self.rating_avg,
             'status': self.status,
             'category': category_data,

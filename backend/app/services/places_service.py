@@ -275,6 +275,7 @@ class PlacesService:
                     Location.address,
                     Location.price_range_min,
                     Location.price_range_max,
+                    Location.price,
                     Location.rating_avg,
                     Location.status,
                     Location.path,
@@ -364,6 +365,7 @@ class PlacesService:
                 address=address,
                 price_range_min=PlacesService._normalize_float(data.get('price_range_min')),
                 price_range_max=PlacesService._normalize_float(data.get('price_range_max')),
+                price=PlacesService._normalize_float(data.get('price')),
                 path=PlacesService._normalize_path(data.get('path')),
                 status=status,
             )
@@ -405,6 +407,8 @@ class PlacesService:
                 location.price_range_min = PlacesService._normalize_float(data.get('price_range_min'))
             if 'price_range_max' in data:
                 location.price_range_max = PlacesService._normalize_float(data.get('price_range_max'))
+            if 'price' in data:
+                location.price = PlacesService._normalize_float(data.get('price'))
             if 'path' in data:
                 location.path = PlacesService._normalize_path(data.get('path'))
             if 'status' in data and data.get('status') in ('ACTIVE', 'INACTIVE'):

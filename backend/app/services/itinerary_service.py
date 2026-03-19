@@ -6,7 +6,7 @@ from flask import current_app
 from app import db
 from app.models.interaction import SavedItinerary
 from app.models.location import Location
-from app.services.ai_service import get_ai_service
+from app.services.ai import get_ai_service
 
 
 class ItineraryService:
